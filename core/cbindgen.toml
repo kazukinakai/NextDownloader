@@ -1,0 +1,29 @@
+# cbindgen.toml
+language = "C"
+include_guard = "NEXTDOWNLOADER_CORE_H"
+include_version = true
+namespace = "nextdownloader_core"
+tab_width = 4
+style = "both"
+header = """
+/* NextDownloader Core - Rust FFI Bindings */
+/* 自動生成されたヘッダーファイル - 手動で編集しないでください */
+"""
+
+[parse]
+parse_deps = true
+include = ["nextdownloader-core"]
+
+[export]
+prefix = "nextdownloader_"
+include = ["ErrorCode", "download_video", "detect_content_type", "check_dependencies", "get_video_info", "free_string"]
+
+[defines]
+"feature = ffi" = "FFI_ENABLED"
+
+[enum]
+rename_variants = "ScreamingSnakeCase"
+prefix_with_name = true
+
+[export.rename]
+"ErrorCode" = "nextdownloader_error_code"

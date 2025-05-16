@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "core",
+    "cli",
+    "gui/src-tauri"
+]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["NextDownloader Team"]
+edition = "2021"

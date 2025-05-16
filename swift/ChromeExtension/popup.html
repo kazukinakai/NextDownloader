@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>HLS動画ダウンローダー</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: sans-serif;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .header img {
+      width: 24px;
+      height: 24px;
+      margin-right: 10px;
+    }
+    .header h1 {
+      font-size: 16px;
+      margin: 0;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .status.active {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    .status.inactive {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #1565c0;
+    }
+    button:disabled {
+      background-color: #bbdefb;
+      cursor: not-allowed;
+    }
+    .media-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .media-item {
+      padding: 8px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 12px;
+    }
+    .media-item:last-child {
+      border-bottom: none;
+    }
+    .media-url {
+      word-break: break-all;
+      color: #1976d2;
+      cursor: pointer;
+    }
+    .media-url:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="images/icon48.png" alt="アイコン">
+    <h1>HLS動画ダウンローダー</h1>
+  </div>
+  
+  <div id="statusContainer" class="status inactive">
+    <span id="statusText">検出中...</span>
+  </div>
+  
+  <div id="mediaContainer" style="display: none;">
+    <div>検出されたメディア:</div>
+    <div id="mediaList" class="media-list"></div>
+  </div>
+  
+  <button id="scanButton">ページをスキャン</button>
+  <button id="downloadButton" disabled>選択したメディアをダウンロード</button>
+  
+  <script src="js/popup.js"></script>
+</body>
+</html>
