@@ -4,7 +4,9 @@ import Combine
 class Aria2cService {
     static let shared = Aria2cService()
     
-    private let executablePath = "/usr/local/bin/aria2c"
+    private var executableURL: URL? {
+        return ExternalToolsService.shared.getToolPath(type: .aria2c)
+    }
     private var currentTasks: [UUID: Process] = [:]
     private var progressHandlers: [UUID: (Double, String, String) -> Void] = [:]
     
@@ -12,13 +14,17 @@ class Aria2cService {
     
     /// aria2cが利用可能かチェック
     func isAvailable() -> Bool {
-        return FileManager.default.fileExists(atPath: executablePath)
+        return executableURL != nil
     }
     
     /// aria2cのバージョンを取得
     func getVersion() async throws -> String {
+        guard let execURL = executableURL else {
+            throw DownloadError.toolNotFound("aria2c")
+        }
+        
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.executableURL = execURL
         process.arguments = ["--version"]
         
         let outputPipe = Pipe()
@@ -54,8 +60,12 @@ class Aria2cService {
     
     /// 動画をダウンロード（高度な設定）
     func downloadVideoAdvanced(taskId: UUID, url: String, outputPath: String, filename: String, options: DownloadOptions) async throws -> URL {
+        guard let execURL = executableURL else {
+            throw DownloadError.toolNotFound("aria2c")
+        }
+        
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.executableURL = execURL
         
         // 基本的な引数
         var arguments = [

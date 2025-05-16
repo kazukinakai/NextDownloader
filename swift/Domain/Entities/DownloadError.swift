@@ -7,6 +7,7 @@ enum DownloadError: Error {
     case permissionDenied
     case networkError
     case unknownError
+    case toolNotFound(String)
     
     var localizedDescription: String {
         switch self {
@@ -22,6 +23,8 @@ enum DownloadError: Error {
             return "ネットワークエラーが発生しました"
         case .unknownError:
             return "不明なエラーが発生しました"
+        case .toolNotFound(let toolName):
+            return "必要なツール（\(toolName)）が見つかりません"
         }
     }
 }

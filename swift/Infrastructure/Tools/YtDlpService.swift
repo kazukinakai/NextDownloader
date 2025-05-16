@@ -3,19 +3,25 @@ import Foundation
 class YtDlpService {
     static let shared = YtDlpService()
     
-    private let executablePath = "/usr/local/bin/yt-dlp"
+    private var executableURL: URL? {
+        return ExternalToolsService.shared.getToolPath(type: .ytDlp)
+    }
     
     private init() {}
     
     /// yt-dlpが利用可能かチェック
     func isAvailable() -> Bool {
-        return FileManager.default.fileExists(atPath: executablePath)
+        return executableURL != nil
     }
     
     /// 動画情報を取得
     func getVideoInfo(url: String) async throws -> VideoInfo {
+        guard let execURL = executableURL else {
+            throw DownloadError.toolNotFound("yt-dlp")
+        }
+        
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.executableURL = execURL
         process.arguments = [
             "-J",  // JSON形式で出力
             "--no-warnings",
@@ -49,8 +55,12 @@ class YtDlpService {
     
     /// 動画URLを取得
     func getVideoUrl(url: String) async throws -> String {
+        guard let execURL = executableURL else {
+            throw DownloadError.toolNotFound("yt-dlp")
+        }
+        
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.executableURL = execURL
         process.arguments = [
             "--get-url",
             "--no-warnings",
@@ -74,8 +84,12 @@ class YtDlpService {
     
     /// 動画のタイトルを取得
     func getVideoTitle(url: String) async throws -> String {
+        guard let execURL = executableURL else {
+            throw DownloadError.toolNotFound("yt-dlp")
+        }
+        
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.executableURL = execURL
         process.arguments = [
             "--get-title",
             "--no-warnings",

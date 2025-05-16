@@ -3,23 +3,29 @@ import Foundation
 class FFmpegService {
     static let shared = FFmpegService()
     
-    private let executablePath = "/usr/local/bin/ffmpeg"
+    private var executableURL: URL? {
+        return ExternalToolsService.shared.getToolPath(type: .ffmpeg)
+    }
     private var currentTasks: [UUID: Process] = [:]
     
     private init() {}
     
     /// ffmpegが利用可能かチェック
     func isAvailable() -> Bool {
-        return FileManager.default.fileExists(atPath: executablePath)
+        return executableURL != nil
     }
     
     /// 動画を処理する
     func processVideo(taskId: UUID, inputUrl: URL, outputPath: String, filename: String, format: VideoFormat = .mp4) async throws -> URL {
+        guard let execURL = executableURL else {
+            throw DownloadError.toolNotFound("ffmpeg")
+        }
+        
         let outputFilename = "\(filename).\(format.rawValue)"
         let outputUrl = URL(fileURLWithPath: "\(outputPath)/\(outputFilename)")
         
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: executablePath)
+        process.executableURL = execURL
         
         // ffmpegのコマンドライン引数を設定
         var arguments = [
