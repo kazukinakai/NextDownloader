@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use tokio::process::Command;
 use crate::types::{DownloadError, VideoFormat};
+use std::ffi::OsStr;
+use tokio::fs;
 
 /// FFmpeg外部ツールを扱うための構造体
 pub struct FFmpegTool {
@@ -115,11 +117,177 @@ impl FFmpegTool {
     /// 音声を抽出
     pub async fn extract_audio(
         &self,
-        input_url: &PathBuf,
-        output_path: &PathBuf,
-        filename: &str
-    ) -> Result<PathBuf, DownloadError> {
-        self.process_video(input_url, output_path, filename, &VideoFormat::Mp3).await
+        input_path: &PathBuf,
+        output_file: &PathBuf
+    ) -> Result<(), DownloadError> {
+        // 入力がディレクトリの場合、セグメントリストを作成
+        if input_path.is_dir() {
+            let segments_list = self.create_segments_list(input_path).await?;
+            let temp_list_path = input_path.join("segments.txt");
+            fs::write(&temp_list_path, segments_list).await
+                .map_err(|e| DownloadError::IoError(format!("セグメントリストの書き込みに失敗しました: {}", e)))?;
+            
+            // ffmpegを使用して音声を抽出
+            let args = vec![
+                "-f", "concat",
+                "-safe", "0",
+                "-i", temp_list_path.to_str().unwrap_or(""),
+                "-vn", // ビデオストリームを除外
+                "-c:a", "libmp3lame", // MP3エンコーダーを使用
+                "-q:a", "2", // 品質設定
+                "-y", // 既存ファイルを上書き
+                output_file.to_str().unwrap_or(""),
+            ];
+            
+            self.run_ffmpeg_command(&args).await?;
+            
+            // 一時ファイルを削除
+            let _ = fs::remove_file(temp_list_path).await;
+            
+            Ok(())
+        } else {
+            // 単一ファイルからの音声抽出
+            let args = vec![
+                "-i", input_path.to_str().unwrap_or(""),
+                "-vn", // ビデオストリームを除外
+                "-c:a", "libmp3lame", // MP3エンコーダーを使用
+                "-q:a", "2", // 品質設定
+                "-y", // 既存ファイルを上書き
+                output_file.to_str().unwrap_or(""),
+            ];
+            
+            self.run_ffmpeg_command(&args).await
+        }
+    }
+    
+    /// HLSセグメントを結合
+    pub async fn concat_segments(
+        &self,
+        segments_dir: &PathBuf,
+        output_file: &PathBuf,
+        format: VideoFormat
+    ) -> Result<(), DownloadError> {
+        // セグメントリストを作成
+        let segments_list = self.create_segments_list(segments_dir).await?;
+        let temp_list_path = segments_dir.join("segments.txt");
+        fs::write(&temp_list_path, segments_list).await
+            .map_err(|e| DownloadError::IoError(format!("セグメントリストの書き込みに失敗しました: {}", e)))?;
+        
+        // フォーマットに応じた引数を設定
+        let mut args = vec![
+            "-f", "concat",
+            "-safe", "0",
+            "-i", temp_list_path.to_str().unwrap_or(""),
+        ];
+        
+        match format {
+            VideoFormat::Mp4 => {
+                args.extend_from_slice(&[
+                    "-c:v", "copy",
+                    "-c:a", "aac",
+                    "-movflags", "faststart", // Web再生用に最適化
+                ]);
+            },
+            VideoFormat::Mkv => {
+                args.extend_from_slice(&[
+                    "-c:v", "copy",
+                    "-c:a", "copy",
+                ]);
+            },
+            VideoFormat::Mp3 => {
+                args.extend_from_slice(&[
+                    "-vn", // ビデオストリームを除外
+                    "-c:a", "libmp3lame",
+                    "-q:a", "2",
+                ]);
+            },
+            _ => {
+                // デフォルトはそのままコピー
+                args.extend_from_slice(&[
+                    "-c", "copy",
+                ]);
+            }
+        }
+        
+        // 出力ファイルを追加
+        args.extend_from_slice(&[
+            "-y", // 既存ファイルを上書き
+            output_file.to_str().unwrap_or(""),
+        ]);
+        
+        // ffmpegコマンドを実行
+        self.run_ffmpeg_command(&args).await?;
+        
+        // 一時ファイルを削除
+        let _ = fs::remove_file(temp_list_path).await;
+        
+        Ok(())
+    }
+    
+    /// ディレクトリ内のセグメントファイルからリストを作成
+    async fn create_segments_list(&self, dir: &PathBuf) -> Result<String, DownloadError> {
+        // ディレクトリ内のファイルを取得
+        let mut entries = fs::read_dir(dir).await
+            .map_err(|e| DownloadError::IoError(format!("ディレクトリの読み込みに失敗しました: {}", e)))?;
+        
+        // .tsファイルを収集
+        let mut segment_files = Vec::new();
+        
+        while let Some(entry) = entries.next_entry().await
+            .map_err(|e| DownloadError::IoError(format!("ディレクトリエントリの読み込みに失敗しました: {}", e)))? {
+            
+            let path = entry.path();
+            if path.is_file() && path.extension() == Some(OsStr::new("ts")) {
+                segment_files.push(path);
+            }
+        }
+        
+        // 数字順にソート
+        segment_files.sort_by(|a, b| {
+            let a_name = a.file_name().unwrap_or_default().to_string_lossy();
+            let b_name = b.file_name().unwrap_or_default().to_string_lossy();
+            a_name.cmp(&b_name)
+        });
+        
+        // ffmpegのconcatフォーマットに合わせたリストを作成
+        let mut list = String::new();
+        for file in segment_files {
+            // ファイル名にシングルクォートが含まれる場合はエスケープ
+            let file_path = file.to_string_lossy().replace("'", "'\\'''");
+            list.push_str(&format!("file '{}'", file_path));
+            list.push('\n');
+        }
+        
+        if list.is_empty() {
+            return Err(DownloadError::ProcessFailed("セグメントファイルが見つかりません".to_string()));
+        }
+        
+        Ok(list)
+    }
+    
+    /// ffmpegコマンドを実行
+    async fn run_ffmpeg_command(&self, args: &[&str]) -> Result<(), DownloadError> {
+        // プロセス起動
+        let mut child = Command::new(&self.executable_path)
+            .args(args)
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| DownloadError::ProcessFailed(format!("ffmpegの起動に失敗しました: {}", e)))?;
+            
+        // 実行終了を待機
+        let status = child.wait().await
+            .map_err(|e| DownloadError::ProcessFailed(format!("ffmpegの実行中にエラーが発生しました: {}", e)))?;
+        
+        if !status.success() {
+            let mut stderr = child.stderr.take().expect("Failed to get stderr");
+            let mut error_message = String::new();
+            stderr.read_to_string(&mut error_message).await
+                .map_err(|e| DownloadError::IoError(format!("エラー出力の読み込みに失敗しました: {}", e)))?;
+            
+            return Err(DownloadError::ProcessFailed(format!("ffmpegがエラーを返しました: {}", error_message)));
+        }
+        
+        Ok(())
     }
 }
 

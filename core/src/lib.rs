@@ -4,11 +4,6 @@
 /// video content from various sources.
 
 // 外部クレート
-use std::path::PathBuf;
-use tokio::process::Command;
-use serde::{Serialize, Deserialize};
-use thiserror::Error;
-use async_trait::async_trait;
 
 // モジュール宣言
 pub mod types;
@@ -53,17 +48,17 @@ pub mod ffi {
         let c_output_path = unsafe { CStr::from_ptr(output_path) };
         let c_filename = unsafe { CStr::from_ptr(filename) };
 
-        let url_str = match c_url.to_str() {
+        let _url_str = match c_url.to_str() {
             Ok(s) => s,
             Err(_) => return ErrorCode::UnknownError as libc::c_int,
         };
 
-        let output_path_str = match c_output_path.to_str() {
+        let _output_path_str = match c_output_path.to_str() {
             Ok(s) => s,
             Err(_) => return ErrorCode::UnknownError as libc::c_int,
         };
 
-        let filename_str = match c_filename.to_str() {
+        let _filename_str = match c_filename.to_str() {
             Ok(s) => s,
             Err(_) => return ErrorCode::UnknownError as libc::c_int,
         };

@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
+use std::time::Duration;
+use url::Url;
 
 /// ユーティリティ関数を提供するモジュール
 
@@ -127,4 +129,59 @@ pub async fn install_tool(
     download_file(url, &install_path).await?;
     
     Ok(install_path)
+}
+
+/// ディレクトリが存在することを確認し、存在しない場合は作成します。
+pub async fn ensure_dir_exists(dir: &PathBuf) -> std::io::Result<()> {
+    if !dir.exists() {
+        fs::create_dir_all(dir).await?
+    } else if !dir.is_dir() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!("{:?} はディレクトリではありません", dir)
+        ));
+    }
+    
+    Ok(())
+}
+
+/// リトライ可能な非同期処理を実行します。
+pub async fn with_retry<F, Fut, T, E>(
+    f: F,
+    retries: u32,
+    delay: Duration
+) -> Result<T, E>
+where
+    F: Fn() -> Fut,
+    Fut: std::future::Future<Output = Result<T, E>>,
+{
+    let mut attempts = 0;
+    loop {
+        match f().await {
+            Ok(result) => return Ok(result),
+            Err(err) => {
+                attempts += 1;
+                if attempts >= retries {
+                    return Err(err);
+                }
+                tokio::time::sleep(delay).await;
+            }
+        }
+    }
+}
+
+/// URLからベースURLを取得します。
+pub fn get_base_url(url_str: &str) -> String {
+    if let Ok(url) = Url::parse(url_str) {
+        let path = url.path();
+        let last_slash_pos = path.rfind('/').unwrap_or(0);
+        let base_path = &path[..=last_slash_pos];
+        
+        let mut base_url = url.clone();
+        base_url.set_path(base_path);
+        base_url.to_string()
+    } else {
+        let last_slash_pos = url_str.rfind('/').unwrap_or(0);
+        url_str[..=last_slash_pos].to_string()
+    }
 }

@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
+use std::io;
+use reqwest;
 
 /// ダウンロードするコンテンツのタイプ
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -18,7 +20,7 @@ pub enum ContentType {
 }
 
 /// 動画フォーマット
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum VideoFormat {
     /// MP4フォーマット
     Mp4,
@@ -49,6 +51,16 @@ pub struct DownloadOptions {
     pub use_keep_alive: bool,
     /// 出力フォーマット
     pub format: VideoFormat,
+    /// Rustの直接ダウンロード機能を使用するか
+    /// true: reqwestを使用した直接ダウンロード
+    /// false: yt-dlpとaria2cを使用したダウンロード
+    pub use_direct_download: Option<bool>,
+    /// セグメントダウンロードのタイムアウト設定（秒）
+    pub segment_timeout: Option<u64>,
+    /// セグメントダウンロードのリトライ回数
+    pub segment_retries: Option<u32>,
+    /// セグメントダウンロードのリトライ間隔（ミリ秒）
+    pub segment_retry_delay: Option<u64>,
 }
 
 impl Default for DownloadOptions {
@@ -63,12 +75,16 @@ impl Default for DownloadOptions {
             use_quic: false,
             use_keep_alive: true,
             format: VideoFormat::Mp4,
+            use_direct_download: Some(false),
+            segment_timeout: Some(30),
+            segment_retries: Some(3),
+            segment_retry_delay: Some(1000),
         }
     }
 }
 
 /// ダウンロード関連のエラー
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone)]
 pub enum DownloadError {
     /// ファイルが見つからない
     #[error("ファイルが見つかりません")]
@@ -82,9 +98,29 @@ pub enum DownloadError {
     #[error("プロセスの実行に失敗: {0}")]
     ProcessFailed(String),
     
+    /// I/Oエラー（文字列メッセージ）
+    #[error("I/Oエラー: {0}")]
+    IoError(String),
+    
+    /// ネットワークエラー
+    #[error("ネットワークエラー: {0}")]
+    NetworkError(String),
+    
+    /// シリアライゼーションエラー
+    #[error("シリアライゼーションエラー: {0}")]
+    SerializationError(String),
+    
+    /// ツールが見つからない
+    #[error("必要なツールが見つかりません: {0}")]
+    ToolNotFound(String),
+    
+    /// 範囲指定が無効
+    #[error("無効な範囲指定: {0}")]
+    InvalidRange(String),
+    
     /// I/Oエラー
     #[error("I/Oエラー: {0}")]
-    Io(#[from] std::io::Error),
+    Io(#[from] Box<std::io::Error>),
     
     /// JSON解析エラー
     #[error("JSON解析エラー: {0}")]
@@ -93,6 +129,10 @@ pub enum DownloadError {
     /// 内部エラー
     #[error("内部エラー: {0}")]
     Internal(String),
+    
+    /// ダウンロード状態のエラー
+    #[error("ダウンロード状態のエラー: {0}")]
+    StateError(String),
 }
 
 /// 動画情報

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
+use std::io;
 use tokio::process::Command;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::AsyncBufReadExt;
 use regex::Regex;
 use crate::types::{DownloadError, VideoInfo, ProgressInfo, ProgressCallback, DownloadOptions, FormatInfo};
 
@@ -8,6 +9,12 @@ use crate::types::{DownloadError, VideoInfo, ProgressInfo, ProgressCallback, Dow
 pub struct YtDlpTool {
     /// 実行ファイルのパス
     executable_path: PathBuf,
+}
+
+impl From<io::Error> for DownloadError {
+    fn from(error: io::Error) -> Self {
+        DownloadError::ProcessFailed(error.to_string())
+    }
 }
 
 impl YtDlpTool {
@@ -46,6 +53,11 @@ impl YtDlpTool {
             .await;
             
         result.is_ok()
+    }
+    
+    /// 実行ファイルのパスを取得
+    pub fn executable_path(&self) -> &PathBuf {
+        &self.executable_path
     }
     
     /// 動画情報を取得
@@ -219,5 +231,81 @@ impl YtDlpTool {
         }
         
         Err(DownloadError::FileNotFound)
+    }
+    
+    /// カスタム引数でyt-dlpを実行
+    pub async fn run_with_args(
+        &self,
+        args: &[String],
+        progress_callback: Option<ProgressCallback>,
+    ) -> Result<(), DownloadError> {
+        let mut child = tokio::process::Command::new(self.executable_path())
+            .args(args)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()?;
+
+        if let Some(callback) = progress_callback {
+            let stdout = child.stdout.take().expect("Failed to get stdout");
+            let stderr = child.stderr.take().expect("Failed to get stderr");
+            
+            let mut stdout_reader = tokio::io::BufReader::new(stdout).lines();
+            let mut stderr_reader = tokio::io::BufReader::new(stderr).lines();
+            
+            loop {
+                tokio::select! {
+                    result = stdout_reader.next_line() => {
+                        if let Ok(Some(line)) = result {
+                            // 進捗情報をパースしてコールバックを呼び出す
+                            if let Some(progress) = Self::parse_progress(&line) {
+                                callback(progress);
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    result = stderr_reader.next_line() => {
+                        if let Ok(Some(line)) = result {
+                            // エラーメッセージをログに出力
+                            log::error!("yt-dlp error: {}", line);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        let status = child.wait().await?;
+        
+        if !status.success() {
+            return Err(DownloadError::ProcessFailed("yt-dlp process failed".to_string()));
+        }
+        
+        Ok(())
+    }
+    
+    /// yt-dlpの進捗出力から進捗情報をパース
+    fn parse_progress(line: &str) -> Option<ProgressInfo> {
+        // 進捗情報をパースする正規表現
+        let progress_re = regex::Regex::new(r"(\d+\.?\d*)% of ([\d.]+\s*[KMGT]?i?B) at\s*([\d.]+\s*[KMGT]?i?B/s)(?:\s*ETA\s*(\d+:?\d*))?").ok()?;
+        
+        // 正規表現でマッチング
+        let caps = progress_re.captures(line)?;
+        
+        // 進捗パーセンテージを取得 (0.0 〜 1.0 に正規化)
+        let progress = caps.get(1)?.as_str().parse::<f64>().ok()? / 100.0;
+        
+        // 速度を取得
+        let speed = caps.get(3)?.as_str().trim().to_string();
+        
+        // ETAを取得 (オプション)
+        let eta = caps.get(4).map(|m| m.as_str().to_string()).unwrap_or_default();
+        
+        Some(ProgressInfo {
+            progress,
+            speed,
+            eta,
+        })
     }
 }
