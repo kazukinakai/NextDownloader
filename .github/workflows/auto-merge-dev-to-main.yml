@@ -1,0 +1,95 @@
+name: Auto-merge dev to main
+
+# このワークフローの目的：
+# devブランチの変更を自動的にmainブランチにマージするCI/CDパイプライン
+# 1. devブランチへのプッシュ時に自動実行
+# 2. 毎日定期実行でdev→mainの同期を維持
+# 3. 必要に応じて手動実行も可能
+
+on:
+  # devブランチへのプッシュ時に実行
+  push:
+    branches:
+      - dev
+  
+  # 毎日午前0時に実行（定期的なマージ）
+  schedule:
+    - cron: '0 0 * * *'
+  
+  # 手動実行も可能に
+  workflow_dispatch:
+
+# 他のワークフローをトリガーするための権限設定
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Personal Access Tokenを使用（リポジトリシークレットに設定）
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+      
+      - name: Check for conflicts
+        id: check_conflicts
+        run: |
+          # mainブランチをフェッチ
+          git fetch origin main
+          
+          # devとmainの間に競合がないか確認
+          if git merge-tree $(git merge-base origin/dev origin/main) origin/dev origin/main | grep -i 'conflict'; then
+            echo "has_conflicts=true" >> $GITHUB_OUTPUT
+            echo "⚠️ マージコンフリクトが検出されました。手動での解決が必要です。"
+            exit 1
+          else
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
+            echo "✅ マージコンフリクトはありません。自動マージを続行します。"
+          fi
+      
+      - name: Create Pull Request
+        if: steps.check_conflicts.outputs.has_conflicts != 'true'
+        id: create_pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Auto-merge dev to main"
+          title: "🤖 自動マージ: dev → main"
+          body: |
+            ## 自動マージ PR
+            
+            このPRは、devブランチからmainブランチへの変更を自動的にマージするために作成されました。
+            
+            ### 📝 変更内容
+            
+            devブランチの最新の変更をmainブランチに反映します。
+          branch: auto-merge-dev-to-main
+          base: main
+          delete-branch: true
+      
+      - name: Auto-approve PR
+        if: steps.create_pr.outputs.pull-request-number
+        uses: hmarr/auto-approve-action@v3
+        with:
+          pull-request-number: ${{ steps.create_pr.outputs.pull-request-number }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Merge Pull Request
+        if: steps.create_pr.outputs.pull-request-number
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_LABELS: ""
+          MERGE_METHOD: "merge"
+          MERGE_COMMIT_MESSAGE: "Auto-merge dev to main"
+          MERGE_DELETE_BRANCH: "true"
+          PULL_REQUEST: ${{ steps.create_pr.outputs.pull-request-number }}
