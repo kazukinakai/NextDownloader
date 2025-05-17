@@ -1,0 +1,90 @@
+# Tauri設定ファイル（モバイル版）
+# NextDownloader - 高性能ダウンローダーアプリケーション
+
+[build]
+# フロントエンドのビルド出力ディレクトリ
+dist_dir = "../dist"
+# 開発時のフロントエンドのURL
+dev_path = "http://localhost:3000"
+# ビルド前に実行するコマンド
+before_build_command = "npm run build"
+
+[app]
+# アプリケーション情報
+name = "NextDownloader"
+frontend_dist = "../dist"
+# アプリケーションのID（逆ドメイン表記）
+identifier = "com.nextdownloader.app"
+# アプリケーションのアイコン
+icon = ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+
+# セキュリティ設定
+[app.security]
+# CSP (Content Security Policy)
+csp = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+
+# モバイル設定
+[app.mobile]
+# iOS設定
+[app.mobile.ios]
+development_team = "ABCDE12345" # 開発チームID（実際のIDに変更してください）
+distribution_method = "app-store"
+background_color = "#FFFFFF"
+use_framework = "automatic"
+
+# Android設定
+[app.mobile.android]
+package_id = "com.nextdownloader.app"
+min_sdk_version = 24
+target_sdk_version = 33
+version_code = 1
+
+# ウィンドウ設定
+[app.windows]
+title = "NextDownloader"
+width = 1000
+height = 700
+resizable = true
+fullscreen = false
+transparent = false
+decorations = true
+always_on_top = false
+visible = true
+theme = "Light"
+content_protected = false
+file_drop_enabled = true
+
+# バンドル設定
+[bundle]
+active = true
+category = "Utility"
+copyright = "© 2025 NextDownloader Team"
+short_description = "高性能ダウンローダーアプリケーション"
+long_description = """
+NextDownloaderは、様々な形式のコンテンツをダウンロードするための高性能なアプリケーションです。
+MP4、HLS、DASH、YouTubeなど、多様なコンテンツタイプに対応しています。
+"""
+publisher = "NextDownloader Team"
+
+# macOS固有の設定
+[bundle.macos]
+frameworks = []
+minimum_system_version = "10.15"
+license = "LICENSE"
+license_file = "LICENSE.txt"
+identity = null # 署名に使用するID
+
+# Windows固有の設定
+[bundle.windows]
+webview_install_mode = "skip"
+webview_fixed_runtime_path = null
+allow_downgrades = false
+
+# Linux固有の設定
+[bundle.linux]
+desktop_template = null
+icon_theme = "hicolor"
+
+# プラグイン設定
+[plugins]
+# プラグインの設定をここに追加

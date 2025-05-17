@@ -1,0 +1,18 @@
+[package]
+name = "nextdownloader-uniffi"
+version = "0.1.0"
+edition = "2021"
+description = "UniFFI bindings for NextDownloader"
+
+[lib]
+name = "nextdownloader_uniffi"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+nextdownloader-core = { path = "../../../core" }
+uniffi = { version = "0.27.0", features = ["build"] }
+thiserror = "1.0.58"
+tokio = { version = "1.36.0", features = ["full"] }
+
+[build-dependencies]
+uniffi = { version = "0.27.0", features = ["build"] }

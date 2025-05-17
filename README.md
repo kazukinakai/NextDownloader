@@ -1,79 +1,121 @@
-# NextDownloader-Rust
+# NextDownloader
 
-NextDownloader はマルチプラットフォーム対応の高速動画ダウンローダーです。macOS, Windows, Linux で同一コードベースで実行できます。
+NextDownloaderは、様々な形式のコンテンツを簡単かつ高速にダウンロードするためのクロスプラットフォームアプリケーションです。
 
-## 特徴
+## 主な機能
 
-- 複数の接続を使用した高速ダウンロード（aria2c）
-- YouTube や他のサイトからのダウンロードをサポート（yt-dlp）
-- HLS, DASH, 直接MP4ダウンロードなど複数のフォーマットに対応
-- クロスプラットフォーム（Windows, macOS, Linux）
-- コマンドラインインターフェース（CLI）とグラフィカルユーザーインターフェース（GUI）の両方を提供
+- **多様なコンテンツタイプ対応**: MP4、HLS、DASH、YouTubeなど様々な形式に対応
+- **高速ダウンロード**: 並列ダウンロードとレジューム機能による高速な処理
+- **クロスプラットフォーム**: デスクトップ（macOS、Windows、Linux）とモバイル（iOS、Android）に対応
+- **使いやすいUI**: モダンで直感的なユーザーインターフェース
+- **プラグイン機能**: 拡張可能なプラグインシステム
 
-## インストール方法
+## インストールと実行方法
 
-### 依存関係
+### 必要条件
 
-以下のツールが必要です：
+- Rust 1.70以上
+- Node.js 18以上
+- 依存ツール: yt-dlp, aria2c, ffmpeg
 
-- yt-dlp
-- aria2c
-- ffmpeg
-
-#### macOS:
+### デスクトップアプリのビルドと実行
 
 ```bash
-brew install yt-dlp aria2 ffmpeg
-```
+# リポジトリのクローン
+git clone https://github.com/yourusername/NextDownloader.git
+cd NextDownloader
 
-#### Ubuntu/Debian:
-
-```bash
-sudo apt update
-sudo apt install aria2 ffmpeg
-pip install yt-dlp
-```
-
-#### Windows:
-
-```bash
-winget install yt-dlp
-winget install aria2
-winget install ffmpeg
-```
-
-### ビルド方法
-
-```bash
-# CLIアプリケーションをビルド
-cargo build --release -p nextdownloader-cli
-
-# GUIアプリケーションをビルド
-cd gui
+# 依存関係のインストール
+cargo build
+cd tauri-app
 npm install
+
+# 開発モードで実行
+npm run tauri dev
+
+# ビルド
 npm run tauri build
 ```
 
-## 使用方法
-
-### CLIモード
+### モバイルアプリのビルドと実行
 
 ```bash
-# URLから動画をダウンロード
-nextdownloader-cli download --url https://example.com/video.mp4 --output ~/Downloads --filename myvideo
+# iOS向けビルド
+cd apps/mobile
+npm install
+npm run tauri ios dev
 
-# システム状態をチェック
-nextdownloader-cli check
+# Android向けビルド
+cd apps/mobile
+npm install
+npm run tauri android dev
 ```
 
-### GUIモード
+## 開発環境のセットアップ
 
-アプリケーションを起動し、URLを入力してダウンロードボタンをクリックするだけです。
+### Rust環境
+
+```bash
+# Rustのインストール
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# 必要なツールのインストール
+cargo install uniffi-bindgen
+cargo install tauri-cli
+```
+
+### フロントエンド環境
+
+```bash
+# Node.jsの依存関係
+cd tauri-app
+npm install
+
+# 開発サーバーの起動
+npm run dev
+```
+
+### FFIバインディングの生成
+
+```bash
+# UniFFIバインディングの生成
+cd ffi/src/uniffi
+chmod +x generate_bindings.sh
+./generate_bindings.sh
+```
+
+## 利用可能なスクリプト
+
+- `npm run dev`: フロントエンド開発サーバーの起動
+- `npm run build`: フロントエンドのビルド
+- `npm run tauri dev`: Tauriアプリの開発モードでの実行
+- `npm run tauri build`: Tauriアプリのビルド
+- `./ffi/src/uniffi/generate_bindings.sh`: FFIバインディングの生成
+
+## プロジェクト構造
+
+```
+NextDownloader/
+├── apps/                     # アプリケーション
+│   ├── desktop/              # デスクトップアプリ（Tauri）
+│   └── mobile/               # モバイルアプリ（Tauri 2.0対応）
+├── cli/                      # コマンドラインインターフェース
+├── core/                     # Rustコア機能
+├── ffi/                      # FFIレイヤー
+├── packages/                 # 共通パッケージ
+├── platforms/                # プラットフォーム固有実装
+├── plugins/                  # Tauriプラグイン
+└── docs/                     # ドキュメント
+```
+
+## 貢献方法
+
+1. このリポジトリをフォークします
+2. 新しいブランチを作成します (`git checkout -b feature/amazing-feature`)
+3. 変更をコミットします (`git commit -m 'Add some amazing feature'`)
+4. ブランチにプッシュします (`git push origin feature/amazing-feature`)
+5. プルリクエストを作成します
 
 ## ライセンス
 
-MIT
-
-## 開発者
-
-NextDownloader Team
+MITライセンスの下で配布されています。詳細は[LICENSE](LICENSE)ファイルをご覧ください。

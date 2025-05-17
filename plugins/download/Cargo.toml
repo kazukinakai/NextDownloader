@@ -1,0 +1,20 @@
+[package]
+name = "nextdownloader-plugin-download"
+version = "0.1.0"
+edition = "2021"
+description = "Tauri plugin for NextDownloader download functionality"
+
+[dependencies]
+nextdownloader-core = { path = "../../core" }
+tauri = { version = "2.0.0-beta.12", features = ["api-all"] }
+serde = { version = "1.0.197", features = ["derive"] }
+tokio = { version = "1.36.0", features = ["full"] }
+thiserror = "1.0.58"
+log = "0.4.21"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0-beta.10", features = [] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

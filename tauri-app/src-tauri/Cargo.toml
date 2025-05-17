@@ -1,0 +1,28 @@
+[package]
+name = "nextdownloader-app"
+version = "0.1.0"
+description = "NextDownloader - 高性能ダウンローダーアプリケーション"
+authors = ["NextDownloader Team"]
+edition = "2021"
+rust-version = "1.70"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0-beta.10", features = [] }
+
+[dependencies]
+tauri = { version = "2.0.0-beta.12", features = ["api-all", "macos-private-api"] }
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+tokio = { version = "1.36.0", features = ["full"] }
+log = "0.4.21"
+env_logger = "0.11.3"
+nextdownloader-core = { path = "../../core" }
+nextdownloader-plugin-download = { path = "../../plugins/download" }
+
+[features]
+# デフォルトでは、カスタムプロトコルを有効にする
+default = ["custom-protocol"]
+# カスタムプロトコル機能
+custom-protocol = ["tauri/custom-protocol"]
+# デバッグ機能
+debug = []

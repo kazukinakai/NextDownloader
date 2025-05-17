@@ -1,0 +1,62 @@
+namespace nextdownloader {
+    // エラーコード
+    [Error]
+    enum DownloaderError {
+        "Success",
+        "UnknownError",
+        "InvalidUrl",
+        "NetworkError",
+        "FileSystemError",
+        "DependencyError"
+    };
+
+    // コンテンツタイプ
+    enum ContentType {
+        "MP4",
+        "HLS",
+        "DASH",
+        "YouTube",
+        "Unknown"
+    };
+
+    // ビデオフォーマット
+    enum VideoFormat {
+        "MP4",
+        "WebM",
+        "AVI",
+        "MKV",
+        "Unknown"
+    };
+
+    // 依存関係チェック結果
+    dictionary DependencyStatus {
+        boolean ytdlp;
+        boolean aria2c;
+        boolean ffmpeg;
+    };
+
+    // ダウンロードマネージャー
+    interface DownloadManager {
+        constructor();
+        
+        // 依存関係をチェック
+        [Throws=DownloaderError]
+        DependencyStatus check_dependencies();
+        
+        // コンテンツタイプを検出
+        [Throws=DownloaderError]
+        ContentType detect_content_type(string url);
+        
+        // ダウンロードを開始
+        [Throws=DownloaderError]
+        string start_download(string url, string destination, optional string format = "");
+        
+        // ダウンロードのステータスを取得
+        [Throws=DownloaderError]
+        double get_download_progress(string download_id);
+        
+        // ダウンロードをキャンセル
+        [Throws=DownloaderError]
+        void cancel_download(string download_id);
+    };
+};

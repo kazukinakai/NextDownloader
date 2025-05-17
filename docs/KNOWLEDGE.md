@@ -2,167 +2,202 @@
 
 ## 技術スタックの最新情報
 
-### Rust
-- **Rust バージョン**: 1.75+ (最新安定版)
-- **主要クレート**:
-  - **tokio**: 非同期ランタイム
-    - バージョン: 1.32+
-    - 特徴: イベントドリブンアーキテクチャ、高性能非同期処理
-    - 使用例: `async/await`を使用したダウンロード処理
-  - **reqwest**: HTTPクライアント
-    - バージョン: 0.11+
-    - 特徴: 非同期リクエスト、ストリーミング、プロキシサポート
-    - 使用例: HLS/DASHセグメントのダウンロード
-  - **serde**: シリアライゼーション/デシリアライゼーション
-    - バージョン: 1.0+
-    - 特徴: 柔軟なデータ変換、スキーマ定義、マクロでの自動実装
-    - 使用例: 設定ファイルの読み込み、JSON/YAML処理
-  - **thiserror/anyhow**: エラー処理
-    - バージョン: 最新安定版
-    - 特徴: カスタムエラー型の定義と使用を簡素化
-    - 使用例: ダウンロードエラーの処理
-  - **tauri**: GUIフレームワーク
-    - バージョン: 2.0+
-    - 特徴: クロスプラットフォーム、軽量、セキュア
-    - 使用例: 将来的なクロスプラットフォームUI実装
+### Tauri 2.0（2025年5月更新）
 
-### Swift/SwiftUI
-- **Swift バージョン**: 5.9+
-- **SwiftUI**: iOS 17/macOS 14 以降の機能を活用
-- **最新の変更点**:
-  - Swift Concurrency の完全対応
-  - SwiftUI の新しいライフサイクル管理
-  - マクロを活用した開発効率の向上
-  - Swift/Rust連携のためのFFIサポート
+Tauri 2.0は、Rustベースのクロスプラットフォームアプリケーションフレームワークで、デスクトップだけでなくiOSとAndroidにも対応しています。
 
-### 外部ツール
-- **yt-dlp**: YouTube-DL の改良版、より多くのサイトに対応し、積極的に開発されている
-- **aria2c**: 高速並列ダウンロードツール、HTTP/HTTPS/FTP/BitTorrent に対応
-- **ffmpeg**: 動画処理の業界標準ツール、トランスコードや結合に使用
+#### 主な特徴
+
+- **クロスプラットフォーム**: デスクトップ（Windows, macOS, Linux）とモバイル（iOS, Android）に対応
+- **軽量**: Electronと比較して大幅に小さいバイナリサイズ
+- **セキュア**: セキュリティを重視した設計
+- **高性能**: Rustで実装されたバックエンドによる高いパフォーマンス
+- **ネイティブUI**: OSネイティブのWebViewを使用
+
+#### アーキテクチャ
+
+- **コアエンジン**: Rustで実装されたバックエンド
+- **WebView**: OSネイティブのWebView（WKWebView, WebView2, WebKitGTK）
+- **IPC**: フロントエンドとバックエンド間の通信メカニズム
+- **プラグインシステム**: 機能拡張のためのプラグイン機構
+
+#### モバイル対応
+
+Tauri 2.0では、iOS/Androidのサポートが追加されました。
+
+- **iOS**: WKWebViewを使用
+- **Android**: WebViewを使用
+- **共通API**: デスクトップとモバイルで同じAPIを使用可能
+
+#### プラグインシステム
+
+Tauri 2.0では、プラグインシステムが強化され、より柔軟な機能拡張が可能になりました。
+
+```rust
+// プラグインの定義
+pub struct MyPlugin<R: Runtime> {
+    // プラグインの状態
+}
+
+// プラグインの初期化
+pub fn init<R: Runtime>() -> TauriPlugin<R> {
+    Builder::new("my-plugin")
+        .setup(|app| {
+            // セットアップ処理
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            my_command
+        ])
+        .build()
+}
+
+// コマンドの実装
+#[tauri::command]
+async fn my_command() -> Result<String, String> {
+    // コマンドの処理
+    Ok("Hello from plugin".into())
+}
+```
+
+### Rust-FFI連携（2025年5月更新）
+
+#### UniFFIの活用
+
+UniFFIは、Rustコードから複数の言語（Swift、Kotlin、Python、JavaScript）へのバインディングを自動生成するツールです。従来のC FFIと比較して、以下の利点があります：
+
+- 型安全性の向上
+- 複数言語への対応が容易
+- コードの保守性の向上
+- エラーハンドリングの改善
+
+#### 実装方法
+
+1. UDLファイル（`.udl`）でインターフェースを定義
+2. Rustでインターフェースを実装
+3. バインディングを自動生成
+4. 各言語から生成されたバインディングを使用
+
+#### 使用例（Swift）
+
+```swift
+import NextDownloaderFFI
+
+let downloadManager = DownloadManager()
+let dependencies = try downloadManager.checkDependencies()
+
+if dependencies.ytdlp && dependencies.aria2c && dependencies.ffmpeg {
+    print("All dependencies are available")
+} else {
+    print("Some dependencies are missing")
+}
+
+let contentType = try downloadManager.detectContentType(url: "https://example.com/video.mp4")
+```
+
+#### 使用例（Kotlin）
+
+```kotlin
+import com.nextdownloader.ffi.*
+
+val downloadManager = DownloadManager()
+val dependencies = downloadManager.checkDependencies()
+
+if (dependencies.ytdlp && dependencies.aria2c && dependencies.ffmpeg) {
+    println("All dependencies are available")
+} else {
+    println("Some dependencies are missing")
+}
+
+val contentType = downloadManager.detectContentType("https://example.com/video.mp4")
+```
 
 ## 発見したベストプラクティス
 
-### アーキテクチャ設計
-- **クリーンアーキテクチャ**:
-  - ドメイン層、アプリケーション層、インフラストラクチャ層の明確な分離
-  - 依存関係の方向は内側に向ける（依存性逆転の原則）
-  - インターフェースを活用した疎結合設計
+### モバイル対応のベストプラクティス
 
-- **MVVM パターン**:
-  - SwiftUI と相性の良い MVVM アーキテクチャの採用
-  - ビューとビジネスロジックの分離
-  - テスト可能性の向上
+1. **レスポンシブデザイン**: 様々な画面サイズに対応するUIデザイン
+2. **プラットフォーム固有の最適化**: 各OSの機能を活用
+3. **権限管理**: 必要な権限を適切にリクエスト
+4. **オフライン対応**: ネットワーク接続が不安定な環境でも動作するよう設計
+5. **バッテリー消費の最適化**: バックグラウンド処理の最適化
 
-### Swift/SwiftUI 開発
-- **SwiftUI のパフォーマンス最適化**:
-  - 不必要な再描画を避けるための `@State` と `@Binding` の適切な使用
-  - 大きなビューの分割と再利用
-  - `LazyVStack`/`LazyHStack` の活用
+### FFIレイヤーの設計
 
-- **Swift Concurrency**:
-  - `async/await` パターンの活用
-  - `Task` と `TaskGroup` による並行処理
-  - アクターモデルによる安全な状態管理
+1. **関心事の分離**: コア機能とFFIレイヤーを明確に分離する
+2. **型安全性**: 言語間の型変換を明示的に行い、エラーを防ぐ
+3. **非同期処理**: 非同期関数を同期的に呼び出す場合は、専用のランタイムを用意する
+4. **エラーハンドリング**: エラーを適切に変換し、呼び出し側に伝える
 
-### Rust 開発
-- **エラー処理**:
-  - `thiserror` と `anyhow` クレートの活用
-  - 適切なエラー型の定義と伝播
+### モノレポ構成
 
-- **非同期処理**:
-  - tokio エコシステムの活用
-  - Future と Stream の適切な使用
-  - 非同期コンテキストの伝播
-
-### 外部ツール連携
-- **プロセス管理**:
-  - 非同期プロセス実行
-  - 標準出力/エラー出力のストリーミング処理
-  - シグナルハンドリングによる安全な終了
-
-- **バイナリ管理**:
-  - アプリケーションバンドル内への埋め込み
-  - 自動更新機構
-  - バージョン互換性の確保
+1. **ワークスペースの活用**: Cargo Workspacesを使用して依存関係を一元管理
+2. **独立したクレート**: 機能ごとに独立したクレートとして実装
+3. **バージョン管理**: 各クレートを独立してバージョン管理
 
 ## トラブルシューティングと解決策
 
-### HLS/DASH ダウンロード
-- **問題**: セグメントの一部がダウンロードできない
-  - **解決策**: User-Agent の偽装、リトライ機構の実装、複数 CDN からの取得
+### Tauriのモバイルビルドエラー
 
-- **問題**: DRM 保護コンテンツへのアクセス
-  - **解決策**: ブラウザセッションの活用、認証情報の適切な伝達
+問題: iOS/Androidビルド時のエラー
 
-### 外部ツール連携
-- **問題**: 外部ツールの実行権限
-  - **解決策**: macOS の公証とセキュリティ対策、適切な権限要求
+解決策:
+```bash
+# iOSビルドの前提条件
+xcode-select --install
+rustup target add aarch64-apple-ios
+rustup target add aarch64-apple-ios-sim
 
-- **問題**: 外部ツールの出力解析
-  - **解決策**: 構造化されたログ形式の活用、正規表現による解析
+# Androidビルドの前提条件
+rustup target add armv7-linux-androideabi
+rustup target add aarch64-linux-android
+rustup target add i686-linux-android
+rustup target add x86_64-linux-android
+```
 
-### パフォーマンス
-- **問題**: 大量のセグメントダウンロード時のメモリ使用量
-  - **解決策**: ストリーミング処理、一時ファイルの活用
+### UniFFIのビルドエラー
 
-- **問題**: UI の応答性低下
-  - **解決策**: バックグラウンドスレッドでの処理、進捗更新の最適化
+問題: `uniffi-bindgen`コマンドが見つからない
+
+解決策:
+```bash
+cargo install uniffi-bindgen
+```
+
+### バインディング生成時のエラー
+
+問題: UDLファイルのパスが見つからない
+
+解決策:
+```bash
+# 正しいパスを指定
+cargo run --bin uniffi-bindgen generate /path/to/your.udl --language swift
+```
 
 ## 重要な設計判断とその理由
 
-### Rustコア + SwiftUIアーキテクチャの採用
-- **判断**: コア機能をRustで実装し、UIレイヤーのみをSwiftUIで実装する構成を採用
-- **理由**:
-  - **パフォーマンス**: Rustの低レベル制御とゼロコスト抽象化により、並列ダウンロード処理で最高のパフォーマンスを実現
-  - **メモリ安全性**: 所有権システムによりメモリ管理のバグをコンパイル時に検出
-  - **クロスプラットフォーム**: 同一コアコードを用いて将来的にWindows/Linuxに対応可能
-  - **開発効率**: 長期的に見れば、早期にコアをRustで実装する方が工数が少なくなる
-  - **年月的耐久性**: Rustの強力な型システムとテスト文化により、長期的に保守しやすいコードベースを実現
+### Tauri 2.0の採用
 
-### Swift/Rust連携方式
-- **判断**: C言語のバインディングを介したFFI（Foreign Function Interface）を使用
-- **理由**:
-  - **互換性**: C ABIは安定しており、長期的な互換性を確保
-  - **パフォーマンス**: オーバーヘッドが最小限
-  - **柔軟性**: 非同期処理やコールバックも実装可能
+- **理由**: クロスプラットフォーム対応（デスクトップ・モバイル）を単一のコードベースで実現するため
+- **メリット**: 開発効率の向上、保守性の向上、一貫したユーザー体験
+- **デメリット**: モバイル対応が発展途上、一部のネイティブ機能へのアクセスが制限される可能性
 
-### Chrome 拡張と Native アプリの連携
-- **判断**: Native Messaging API を使用した連携
-- **理由**:
-  - ブラウザのセキュリティモデルとの互換性
-  - 安定した双方向通信の実現
-  - ユーザー体験の向上
+### UniFFIの採用
 
-### 外部ツールの統合
-- **判断**: 既存の高性能ツール（yt-dlp, aria2c, ffmpeg）の活用
-- **理由**:
-  - 車輪の再発明を避ける
-  - 広範なサイト対応と継続的な更新
-  - 専門的な機能の活用
+- **理由**: 複数言語へのバインディング生成を自動化し、保守性を向上させるため
+- **メリット**: 型安全性の向上、コードの重複削減、エラーハンドリングの改善
+- **デメリット**: 学習コストの増加、既存のC FFIからの移行コスト
+
+### Tauriプラグインシステムの活用
+
+- **理由**: 機能を独立したモジュールとして実装し、再利用性を高めるため
+- **メリット**: コードの分離、テスト容易性の向上、機能の拡張性
+- **デメリット**: 設計の複雑化、初期実装コストの増加
 
 ## 学習リソースと参考資料
 
-### Swift/SwiftUI
-- [Apple Developer Documentation](https://developer.apple.com/documentation/)
-- [Swift.org](https://swift.org/)
-- [Hacking with Swift](https://www.hackingwithswift.com/)
-- [Swift by Sundell](https://www.swiftbysundell.com/)
-
-### Rust
-- [The Rust Programming Language](https://doc.rust-lang.org/book/)
-- [Rust by Example](https://doc.rust-lang.org/rust-by-example/)
-- [Rust Cookbook](https://rust-lang-nursery.github.io/rust-cookbook/)
-- [Tokio Documentation](https://tokio.rs/tokio/tutorial)
-
-### HLS/DASH ストリーミング
-- [HLS Specification](https://datatracker.ietf.org/doc/html/rfc8216)
-- [DASH Industry Forum](https://dashif.org/)
-- [FFmpeg Documentation](https://ffmpeg.org/documentation.html)
-
-### Chrome 拡張開発
-- [Chrome Extensions Documentation](https://developer.chrome.com/docs/extensions/)
-- [Native Messaging API](https://developer.chrome.com/docs/extensions/mv3/nativeMessaging/)
-
-### 並列ダウンロード
-- [aria2 Documentation](https://aria2.github.io/)
-- [HTTP Range Requests](https://datatracker.ietf.org/doc/html/rfc7233)
+- [Tauri 2.0公式ドキュメント](https://tauri.app/v2/docs/)
+- [Tauri Mobile Guide](https://tauri.app/v2/guides/mobile/)
+- [UniFFI公式ドキュメント](https://mozilla.github.io/uniffi-rs/)
+- [Rustのクロスプラットフォーム開発ガイド](https://rust-lang.org/learn)
+- [React + TypeScriptベストプラクティス](https://react-typescript-cheatsheet.netlify.app/)

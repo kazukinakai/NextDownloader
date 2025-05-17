@@ -1,0 +1,223 @@
+# NextDownloader .gitignore
+# 包括的なモノレポ構成用.gitignoreファイル（Rust + Tauri + クロスプラットフォーム）
+
+###################
+# Rust関連
+###################
+# Cargoによって生成されたファイル
+/target/
+**/target/
+debug/
+**/*.rs.bk
+
+# Rustのビルド生成物
+*.rlib
+*.rmeta
+*.d
+*.dll
+*.dylib
+*.so
+*.a
+*.lib
+*.pdb
+
+###################
+# Tauri関連
+###################
+# Tauriの生成ファイル
+**/src-tauri/gen/
+**/dist/
+**/dist-electron/
+
+###################
+# Node.js関連
+###################
+# 依存関係ディレクトリ
+node_modules/
+**/node_modules/
+jspm_packages/
+web_modules/
+
+# キャッシュとログ
+.npm/
+.yarn/
+.pnp.*
+.cache/
+.parcel-cache/
+.rts2_cache*/
+.rpt2_cache*/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ビルド出力
+dist/
+build/
+out/
+.next/
+.nuxt/
+.vuepress/dist/
+.docusaurus/
+.serverless/
+.fusebox/
+.dynamodb/
+
+# ロックファイル（必要に応じてコメントアウト）
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+# bun.lockb
+
+# 環境変数ファイル
+.env
+.env.*
+!.env.example
+
+###################
+# プラットフォーム固有
+###################
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+###################
+# IDE関連
+###################
+# VSCode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+!.vscode/tasks.json.example
+!.vscode/launch.json.example
+
+# JetBrains IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.idea_modules/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Xcode
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+*.xcworkspace
+!default.xcworkspace
+
+###################
+# 言語固有
+###################
+# Swift
+.build/
+.swiftpm/
+
+# C/C++
+*.o
+*.obj
+*.gch
+*.pch
+*.so
+*.dylib
+*.dll
+*.lai
+*.la
+*.a
+*.lib
+
+# TypeScript
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+###################
+# その他
+###################
+# テスト関連
+coverage/
+.nyc_output/
+.coverage
+htmlcov/
+
+# 一時ファイル
+tmp/
+temp/
+.temp/
+
+# バックアップファイル
+*.bak
+*.backup
+*.swp
+*.swo
+
+# ドキュメント生成
+/docs/_build/
+/site/
+
+# 特定のプロジェクトファイル
+# プロジェクト固有の無視パターンをここに追加
