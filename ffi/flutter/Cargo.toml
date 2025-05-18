@@ -1,0 +1,15 @@
+[package]
+name = "next_downloader_ffi_flutter"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+next_downloader_core = { path = "../../core" }
+flutter_rust_bridge = "2.0.0"
+anyhow = "1.0.79"
+thiserror = "1.0.57"
+serde = { version = "1.0.197", features = ["derive"] }
+tokio = { version = "1.36.0", features = ["full"] }

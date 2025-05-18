@@ -3,64 +3,51 @@ name = "nextdownloader-core"
 version = "0.1.0"
 edition = "2021"
 authors = ["NextDownloader Team"]
-description = "Core library for NextDownloader - a multi-platform video downloader"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[lib]
-crate-type = ["cdylib", "staticlib", "rlib"]
+description = "NextDownloader - コアライブラリ"
+license = "MIT"
+repository = "https://github.com/kazukinakai/NextDownloader"
 
 [dependencies]
 # 非同期処理
-tokio = { version = "1.45.0", features = ["full"] }
-
-# HTTPクライアント
-reqwest = { version = "0.11", features = ["json", "stream", "multipart"] }
-
-# シリアライゼーション
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
+tokio = { version = "1.36.0", features = ["full"] }
+futures = "0.3.30"
 
 # エラー処理
-thiserror = "1.0"
-anyhow = "1.0"
+thiserror = "1.0.57"
+anyhow = "1.0.79"
 
-# ユーティリティ
-async-trait = "0.1"
-regex = "1.10.5"
-uuid = { version = "1.8.0", features = ["v4", "serde"] }
+# シリアライズ/デシリアライズ
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+
+# HTTP通信
+reqwest = { version = "0.11.24", features = ["json", "stream"] }
 url = "2.5.0"
-futures = "0.3"
 
 # ロギング
-log = "0.4"
-env_logger = "0.11"
+log = "0.4.21"
+env_logger = "0.11.3"
 
-# FFI
-libc = "0.2"
-
-# ファイル操作
+# ファイルシステム
 tempfile = "3.10.1"
-walkdir = "2.5.0"
-chrono = { version = "0.4.37", features = ["serde"] }
+walkdir = "2.4.0"
 
-# プロセス管理
-which = "6.0.0"
+# 並行処理
+parking_lot = "0.12.1"
+rayon = "1.8.1"
 
-# XML処理
-quick-xml = { version = "0.31.0", features = ["serialize"] }
+# ユーティリティ
+chrono = { version = "0.4.35", features = ["serde"] }
+uuid = { version = "1.7.0", features = ["v4", "serde"] }
+regex = "1.10.3"
+lazy_static = "1.4.0"
 
-# GUIフレームワーク（オプション）
-tauri = { version = "2.0.0", optional = true }
+[dev-dependencies]
+mockall = "0.12.1"
+rstest = "0.18.2"
+tempfile = "3.10.1"
+tokio-test = "0.4.3"
 
 [features]
-default = ["ffi"]
-ffi = []
-tauri-plugin = ["dep:tauri"]
-
-[target.'cfg(target_os = "android")'.dependencies]
-android_logger = "0.13"
-
-[target.'cfg(any(target_os = "ios", target_os = "macos"))'.dependencies]
-oslog = "0.2"
+default = []
+test-integration = []

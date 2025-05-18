@@ -1,0 +1,56 @@
+[package]
+name = "nextdownloader-desktop"
+version = "0.1.0"
+description = "NextDownloader - クロスプラットフォームダウンローダー"
+authors = ["NextDownloader Team"]
+license = "MIT"
+repository = "https://github.com/kazukinakai/NextDownloader"
+edition = "2021"
+rust-version = "1.70"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0-rc.8", features = [] }
+
+[dependencies]
+# Tauri
+tauri = { version = "2.0.0-rc.8", features = ["api-all", "devtools"] }
+tauri-plugin-shell = "2.0.0-rc.4"
+tauri-plugin-http = "2.0.0-rc.4"
+tauri-plugin-fs = "2.0.0-rc.4"
+tauri-plugin-dialog = "2.0.0-rc.4"
+tauri-plugin-notification = "2.0.0-rc.4"
+tauri-plugin-updater = "2.0.0-rc.4"
+tauri-plugin-window = "2.0.0-rc.4"
+
+# NextDownloader
+nextdownloader-core = { path = "../../../core" }
+nextdownloader-ffi = { path = "../../../ffi" }
+
+# 非同期処理
+tokio = { version = "1.36.0", features = ["full"] }
+futures = "0.3.30"
+
+# シリアライズ/デシリアライズ
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+
+# エラー処理
+thiserror = "1.0.57"
+anyhow = "1.0.79"
+
+# ロギング
+log = "0.4.21"
+env_logger = "0.11.3"
+
+# ユーティリティ
+once_cell = "1.19.0"
+uuid = { version = "1.7.0", features = ["v4", "serde"] }
+chrono = { version = "0.4.34", features = ["serde"] }
+
+[features]
+# デフォルト機能セット
+default = ["custom-protocol"]
+# カスタムプロトコルのサポート
+custom-protocol = ["tauri/custom-protocol"]
+# 開発モード
+dev = []

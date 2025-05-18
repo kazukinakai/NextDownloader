@@ -1,0 +1,22 @@
+{
+  "permissions": [
+    {
+      "identifier": "allow-download-dir",
+      "allow": [
+        {
+          "path": "$DOWNLOAD/**"
+        }
+      ],
+      "deny": []
+    },
+    {
+      "identifier": "allow-document-dir",
+      "allow": [
+        {
+          "path": "$DOCUMENT/**"
+        }
+      ],
+      "deny": []
+    }
+  ]
+}

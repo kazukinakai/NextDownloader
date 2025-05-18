@@ -1,0 +1,12 @@
+targets:
+  $default:
+    builders:
+      flutter_rust_bridge_codegen:
+        options:
+          rust_input: rust/src/api.rs
+          dart_output: lib/bridge_generated/bridge_generated.dart
+          c_output: ios/Runner/bridge_generated.h
+          extra_c_output_path:
+            - macos/Runner/
+            - windows/runner/
+            - linux/

@@ -2,202 +2,132 @@
 
 ## 技術スタックの最新情報
 
-### Tauri 2.0（2025年5月更新）
+### Rust
 
-Tauri 2.0は、Rustベースのクロスプラットフォームアプリケーションフレームワークで、デスクトップだけでなくiOSとAndroidにも対応しています。
+- **バージョン**: 1.76.0以上を推奨
+- **非同期処理**: tokio 1.36.0が最新で安定
+- **エラー処理**: anyhow 1.0.79とthiserror 1.0.57の組み合わせが効果的
+- **シリアライズ**: serde 1.0.197が最新
 
-#### 主な特徴
+### Tauri
 
-- **クロスプラットフォーム**: デスクトップ（Windows, macOS, Linux）とモバイル（iOS, Android）に対応
-- **軽量**: Electronと比較して大幅に小さいバイナリサイズ
-- **セキュア**: セキュリティを重視した設計
-- **高性能**: Rustで実装されたバックエンドによる高いパフォーマンス
-- **ネイティブUI**: OSネイティブのWebViewを使用
+- **バージョン**: 2.0.0-rc.8が最新のリリース候補
+- **プラグイン**: 2.0.0-rc.4シリーズが最新
+- **特徴**: 
+  - WebViewベースのクロスプラットフォームアプリケーションフレームワーク
+  - デスクトップとモバイルの両方をサポート
+  - セキュリティ重視の設計
 
-#### アーキテクチャ
+### React/TypeScript
 
-- **コアエンジン**: Rustで実装されたバックエンド
-- **WebView**: OSネイティブのWebView（WKWebView, WebView2, WebKitGTK）
-- **IPC**: フロントエンドとバックエンド間の通信メカニズム
-- **プラグインシステム**: 機能拡張のためのプラグイン機構
+- **React**: 18.2.0が最新の安定版
+- **TypeScript**: 5.3.3以上を推奨
+- **ビルドツール**: Vite 5.0.0以上が高速で効率的
 
-#### モバイル対応
+### FFI技術
 
-Tauri 2.0では、iOS/Androidのサポートが追加されました。
-
-- **iOS**: WKWebViewを使用
-- **Android**: WebViewを使用
-- **共通API**: デスクトップとモバイルで同じAPIを使用可能
-
-#### プラグインシステム
-
-Tauri 2.0では、プラグインシステムが強化され、より柔軟な機能拡張が可能になりました。
-
-```rust
-// プラグインの定義
-pub struct MyPlugin<R: Runtime> {
-    // プラグインの状態
-}
-
-// プラグインの初期化
-pub fn init<R: Runtime>() -> TauriPlugin<R> {
-    Builder::new("my-plugin")
-        .setup(|app| {
-            // セットアップ処理
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![
-            my_command
-        ])
-        .build()
-}
-
-// コマンドの実装
-#[tauri::command]
-async fn my_command() -> Result<String, String> {
-    // コマンドの処理
-    Ok("Hello from plugin".into())
-}
-```
-
-### Rust-FFI連携（2025年5月更新）
-
-#### UniFFIの活用
-
-UniFFIは、Rustコードから複数の言語（Swift、Kotlin、Python、JavaScript）へのバインディングを自動生成するツールです。従来のC FFIと比較して、以下の利点があります：
-
-- 型安全性の向上
-- 複数言語への対応が容易
-- コードの保守性の向上
-- エラーハンドリングの改善
-
-#### 実装方法
-
-1. UDLファイル（`.udl`）でインターフェースを定義
-2. Rustでインターフェースを実装
-3. バインディングを自動生成
-4. 各言語から生成されたバインディングを使用
-
-#### 使用例（Swift）
-
-```swift
-import NextDownloaderFFI
-
-let downloadManager = DownloadManager()
-let dependencies = try downloadManager.checkDependencies()
-
-if dependencies.ytdlp && dependencies.aria2c && dependencies.ffmpeg {
-    print("All dependencies are available")
-} else {
-    print("Some dependencies are missing")
-}
-
-let contentType = try downloadManager.detectContentType(url: "https://example.com/video.mp4")
-```
-
-#### 使用例（Kotlin）
-
-```kotlin
-import com.nextdownloader.ffi.*
-
-val downloadManager = DownloadManager()
-val dependencies = downloadManager.checkDependencies()
-
-if (dependencies.ytdlp && dependencies.aria2c && dependencies.ffmpeg) {
-    println("All dependencies are available")
-} else {
-    println("Some dependencies are missing")
-}
-
-val contentType = downloadManager.detectContentType("https://example.com/video.mp4")
-```
+- **C FFI**: cbindgen 0.26.0が最新
+- **UniFFI**: 0.25.3が最新で多言語バインディングを自動生成
+- **対応言語**: Swift、Kotlin、Python、JavaScript
 
 ## 発見したベストプラクティス
 
-### モバイル対応のベストプラクティス
+### Rustコード構造
 
-1. **レスポンシブデザイン**: 様々な画面サイズに対応するUIデザイン
-2. **プラットフォーム固有の最適化**: 各OSの機能を活用
-3. **権限管理**: 必要な権限を適切にリクエスト
-4. **オフライン対応**: ネットワーク接続が不安定な環境でも動作するよう設計
-5. **バッテリー消費の最適化**: バックグラウンド処理の最適化
+- **モジュール分割**: 機能ごとに明確に分離されたモジュール構造
+- **エラー処理**: 専用のエラータイプとエラーコードの定義
+- **非同期API**: すべての長時間実行操作は非同期APIとして実装
+- **テスト**: 各モジュールに単体テストを含める
 
-### FFIレイヤーの設計
+### FFIレイヤー
 
-1. **関心事の分離**: コア機能とFFIレイヤーを明確に分離する
-2. **型安全性**: 言語間の型変換を明示的に行い、エラーを防ぐ
-3. **非同期処理**: 非同期関数を同期的に呼び出す場合は、専用のランタイムを用意する
-4. **エラーハンドリング**: エラーを適切に変換し、呼び出し側に伝える
+- **C FFI**: 低レベルな相互運用性のための標準的なアプローチ
+- **UniFFI**: より高レベルで使いやすいバインディング
+- **メモリ管理**: 所有権の明確な移譲と適切なリソース解放
+- **エラー処理**: エラーコードとエラーメッセージの適切な変換
 
-### モノレポ構成
+### Tauriアプリケーション
 
-1. **ワークスペースの活用**: Cargo Workspacesを使用して依存関係を一元管理
-2. **独立したクレート**: 機能ごとに独立したクレートとして実装
-3. **バージョン管理**: 各クレートを独立してバージョン管理
+- **状態管理**: アプリケーション状態の集中管理
+- **コマンド**: バックエンドとフロントエンド間の明確なインターフェース
+- **プラグイン**: 機能拡張のためのプラグインシステムの活用
+- **セキュリティ**: 最小権限の原則に基づいた設定
+
+### フロントエンド
+
+- **コンポーネント設計**: 再利用可能な小さなコンポーネント
+- **型安全**: TypeScriptの厳格なタイプチェック
+- **状態管理**: React HooksとContext APIの活用
+- **スタイリング**: Chakra UIによる一貫したデザインシステム
 
 ## トラブルシューティングと解決策
 
-### Tauriのモバイルビルドエラー
+### Rust/FFI関連
 
-問題: iOS/Androidビルド時のエラー
+- **問題**: C FFIでの文字列処理
+  - **解決策**: CStringとCStrの適切な使用、所有権の明確な管理
 
-解決策:
-```bash
-# iOSビルドの前提条件
-xcode-select --install
-rustup target add aarch64-apple-ios
-rustup target add aarch64-apple-ios-sim
+- **問題**: 非同期APIのFFI経由での呼び出し
+  - **解決策**: tokio::runtime::Runtimeを使用して非同期コードをブロッキング呼び出しに変換
 
-# Androidビルドの前提条件
-rustup target add armv7-linux-androideabi
-rustup target add aarch64-linux-android
-rustup target add i686-linux-android
-rustup target add x86_64-linux-android
-```
+### Tauri関連
 
-### UniFFIのビルドエラー
+- **問題**: Tauriコマンドでの非同期処理
+  - **解決策**: async/awaitを使用し、適切なエラーハンドリングを実装
 
-問題: `uniffi-bindgen`コマンドが見つからない
+- **問題**: アプリケーション状態の管理
+  - **解決策**: Arc<Mutex<T>>やArc<RwLock<T>>を使用した共有状態
 
-解決策:
-```bash
-cargo install uniffi-bindgen
-```
+### フロントエンド関連
 
-### バインディング生成時のエラー
+- **問題**: TypeScriptの型定義
+  - **解決策**: インターフェースの明確な定義と共有
 
-問題: UDLファイルのパスが見つからない
-
-解決策:
-```bash
-# 正しいパスを指定
-cargo run --bin uniffi-bindgen generate /path/to/your.udl --language swift
-```
+- **問題**: 非同期APIの呼び出し
+  - **解決策**: try-catchブロックでのエラーハンドリングと適切なローディング状態の管理
 
 ## 重要な設計判断とその理由
 
+### モノレポ構造の採用
+
+- **判断**: プロジェクトをモノレポ構造で組織化
+- **理由**: コード共有の促進、依存関係の一元管理、一貫したビルドプロセス
+
+### FFIレイヤーの分離
+
+- **判断**: コアライブラリとFFIを分離
+- **理由**: 関心事の明確な分離、テスト容易性の向上、メンテナンス性の向上
+
 ### Tauri 2.0の採用
 
-- **理由**: クロスプラットフォーム対応（デスクトップ・モバイル）を単一のコードベースで実現するため
-- **メリット**: 開発効率の向上、保守性の向上、一貫したユーザー体験
-- **デメリット**: モバイル対応が発展途上、一部のネイティブ機能へのアクセスが制限される可能性
+- **判断**: Tauri 2.0を使用してデスクトップアプリを実装
+- **理由**: 軽量、高性能、セキュア、将来的なモバイル対応
 
-### UniFFIの採用
+### Chakra UIの採用
 
-- **理由**: 複数言語へのバインディング生成を自動化し、保守性を向上させるため
-- **メリット**: 型安全性の向上、コードの重複削減、エラーハンドリングの改善
-- **デメリット**: 学習コストの増加、既存のC FFIからの移行コスト
-
-### Tauriプラグインシステムの活用
-
-- **理由**: 機能を独立したモジュールとして実装し、再利用性を高めるため
-- **メリット**: コードの分離、テスト容易性の向上、機能の拡張性
-- **デメリット**: 設計の複雑化、初期実装コストの増加
+- **判断**: UIライブラリとしてChakra UIを選択
+- **理由**: アクセシビリティ、カスタマイズ性、テーマ対応、コンポーネントの豊富さ
 
 ## 学習リソースと参考資料
 
-- [Tauri 2.0公式ドキュメント](https://tauri.app/v2/docs/)
-- [Tauri Mobile Guide](https://tauri.app/v2/guides/mobile/)
-- [UniFFI公式ドキュメント](https://mozilla.github.io/uniffi-rs/)
-- [Rustのクロスプラットフォーム開発ガイド](https://rust-lang.org/learn)
-- [React + TypeScriptベストプラクティス](https://react-typescript-cheatsheet.netlify.app/)
+### Rust
+
+- [The Rust Programming Language](https://doc.rust-lang.org/book/)
+- [Rust by Example](https://doc.rust-lang.org/rust-by-example/)
+- [Tokio Documentation](https://tokio.rs/tokio/tutorial)
+
+### FFI
+
+- [Rust FFI Guide](https://michael-f-bryan.github.io/rust-ffi-guide/)
+- [UniFFI Documentation](https://mozilla.github.io/uniffi-rs/)
+
+### Tauri
+
+- [Tauri 2.0 Documentation](https://tauri.app/v2/guides/)
+- [Tauri API Reference](https://tauri.app/v2/api/)
+
+### React/TypeScript
+
+- [React Documentation](https://react.dev/learn)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
+- [Chakra UI Documentation](https://chakra-ui.com/docs/getting-started)

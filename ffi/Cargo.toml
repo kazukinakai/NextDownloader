@@ -1,0 +1,49 @@
+[package]
+name = "nextdownloader-ffi"
+version = "0.1.0"
+edition = "2021"
+authors = ["NextDownloader Team"]
+description = "NextDownloader - FFIレイヤー"
+license = "MIT"
+repository = "https://github.com/kazukinakai/NextDownloader"
+
+[lib]
+name = "nextdownloader_ffi"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+# NextDownloaderコア
+nextdownloader-core = { path = "../core" }
+
+# FFI関連
+libc = "0.2.153"
+cbindgen = "0.26.0"
+uniffi = { version = "0.25.3", features = ["cli"] }
+
+# シリアライズ/デシリアライズ
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
+
+# エラー処理
+thiserror = "1.0.57"
+anyhow = "1.0.79"
+
+# ロギング
+log = "0.4.21"
+env_logger = "0.11.3"
+
+# ユーティリティ
+lazy_static = "1.4.0"
+
+[build-dependencies]
+cbindgen = "0.26.0"
+uniffi = { version = "0.25.3", features = ["build"] }
+
+[dev-dependencies]
+tempfile = "3.10.1"
+rstest = "0.18.2"
+
+[features]
+default = ["c-ffi", "uniffi"]
+c-ffi = []
+uniffi = []

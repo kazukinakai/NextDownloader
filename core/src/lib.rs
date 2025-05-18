@@ -1,91 +1,139 @@
-/// NextDownloader core library
-///
-/// This module provides core functionality for downloading and processing
-/// video content from various sources.
+//! # NextDownloader Core
+//! 
+//! NextDownloaderのコアライブラリです。
+//! このライブラリは、様々な形式のコンテンツを簡単かつ高速にダウンロードするための
+//! 機能を提供します。
 
-// 外部クレート
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 
-// モジュール宣言
-pub mod types;
+use anyhow::Result;
+use log::{debug, error, info, warn};
+use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc;
+use uuid::Uuid;
+
+// モジュールのエクスポート
 pub mod downloader;
-pub mod tools;
+pub mod content_type;
+pub mod error;
 pub mod utils;
+pub mod config;
 
 // 再エクスポート
-pub use crate::types::*;
-pub use crate::downloader::*;
-pub use crate::tools::*;
+pub use content_type::ContentType;
+pub use downloader::{Downloader, DownloadManager, DownloadOptions, VideoFormat};
+pub use error::ErrorCode;
 
-/// FFI向けエラーコード
-#[repr(C)]
-pub enum ErrorCode {
-    Success = 0,
-    FileNotFound = 1,
-    ProcessFailed = 2,
-    IoError = 3,
-    JsonError = 4,
-    UnknownError = 5,
+/// ダウンロードの進捗状況
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadProgress {
+    /// ダウンロードID
+    pub id: String,
+    /// 進捗率（0.0 - 1.0）
+    pub progress: f64,
+    /// ダウンロード速度（bytes/sec）
+    pub speed: Option<u64>,
+    /// 推定残り時間（秒）
+    pub eta: Option<u64>,
+    /// ダウンロード済みサイズ（bytes）
+    pub downloaded_size: u64,
+    /// 合計サイズ（bytes）
+    pub total_size: Option<u64>,
+    /// ステータスメッセージ
+    pub status_message: Option<String>,
 }
 
-// C FFIのための外部インターフェース
-#[cfg(feature = "ffi")]
-pub mod ffi {
-    use super::*;
-    use std::ffi::{CStr, CString};
-    use std::os::raw::c_char;
+/// ダウンロードの状態
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DownloadStatus {
+    /// 初期化中
+    Initializing,
+    /// ダウンロード中
+    Downloading,
+    /// 一時停止中
+    Paused,
+    /// 完了
+    Completed,
+    /// エラー
+    Error,
+    /// キャンセル
+    Cancelled,
+}
 
-    #[no_mangle]
-    pub extern "C" fn download_url(
-        url: *const c_char,
-        output_path: *const c_char,
-        filename: *const c_char,
-    ) -> libc::c_int {
-        if url.is_null() || output_path.is_null() || filename.is_null() {
-            return ErrorCode::UnknownError as libc::c_int;
+/// ダウンロード情報
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadInfo {
+    /// ダウンロードID
+    pub id: String,
+    /// URL
+    pub url: String,
+    /// 保存先パス
+    pub destination: PathBuf,
+    /// コンテンツタイプ
+    pub content_type: ContentType,
+    /// ステータス
+    pub status: DownloadStatus,
+    /// 進捗情報
+    pub progress: DownloadProgress,
+    /// 作成日時（ISO 8601形式）
+    pub created_at: String,
+    /// 完了日時（ISO 8601形式）
+    pub completed_at: Option<String>,
+    /// エラーメッセージ
+    pub error_message: Option<String>,
+}
+
+/// ダウンロードマネージャーの設定
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadManagerConfig {
+    /// 最大同時ダウンロード数
+    pub max_concurrent_downloads: usize,
+    /// 一時ファイルディレクトリ
+    pub temp_dir: Option<PathBuf>,
+    /// 自動再開を有効にする
+    pub auto_resume: bool,
+    /// ダウンロード完了時に通知する
+    pub notify_on_completion: bool,
+    /// アーカイブを自動的に解凍する
+    pub auto_extract_archives: bool,
+}
+
+impl Default for DownloadManagerConfig {
+    fn default() -> Self {
+        Self {
+            max_concurrent_downloads: 3,
+            temp_dir: None,
+            auto_resume: true,
+            notify_on_completion: true,
+            auto_extract_archives: false,
         }
-
-        let c_url = unsafe { CStr::from_ptr(url) };
-        let c_output_path = unsafe { CStr::from_ptr(output_path) };
-        let c_filename = unsafe { CStr::from_ptr(filename) };
-
-        let _url_str = match c_url.to_str() {
-            Ok(s) => s,
-            Err(_) => return ErrorCode::UnknownError as libc::c_int,
-        };
-
-        let _output_path_str = match c_output_path.to_str() {
-            Ok(s) => s,
-            Err(_) => return ErrorCode::UnknownError as libc::c_int,
-        };
-
-        let _filename_str = match c_filename.to_str() {
-            Ok(s) => s,
-            Err(_) => return ErrorCode::UnknownError as libc::c_int,
-        };
-
-        // この関数は実際にはasyncなので、ここでは簡易版の実装
-        ErrorCode::Success as libc::c_int
     }
 }
 
-// Tauriコマンド実装
-#[cfg(feature = "tauri-plugin")]
-pub mod tauri_plugin {
+/// 依存関係のステータス
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DependencyStatus {
+    /// yt-dlpがインストールされているか
+    pub ytdlp: bool,
+    /// aria2cがインストールされているか
+    pub aria2c: bool,
+    /// ffmpegがインストールされているか
+    pub ffmpeg: bool,
+}
+
+/// NextDownloaderのバージョン情報を返します
+pub fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
+
+#[cfg(test)]
+mod tests {
     use super::*;
 
-    #[tauri::command]
-    pub async fn download(
-        url: String,
-        output_path: String,
-        filename: String,
-        options: Option<DownloadOptions>,
-    ) -> Result<String, String> {
-        let downloader = DownloadManager::new();
-        let path_buf = PathBuf::from(output_path);
-        
-        match downloader.download(&url, &path_buf, &filename, options, None).await {
-            Ok(output_file) => Ok(output_file.to_string_lossy().to_string()),
-            Err(err) => Err(err.to_string()),
-        }
+    #[test]
+    fn test_version() {
+        assert!(!version().is_empty());
     }
 }

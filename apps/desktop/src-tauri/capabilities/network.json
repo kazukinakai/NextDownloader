@@ -1,0 +1,16 @@
+{
+  "permissions": [
+    {
+      "identifier": "allow-all-urls",
+      "allow": [
+        {
+          "url": "https://**"
+        },
+        {
+          "url": "http://**"
+        }
+      ],
+      "deny": []
+    }
+  ]
+}

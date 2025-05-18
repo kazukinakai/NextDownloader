@@ -1,0 +1,7 @@
+# flutter_rust_bridge設定ファイル
+rust_input: crate::api
+rust_root: rust
+dart_output: lib/bridge_generated/bridge_generated.dart
+rust_output: rust/src/bridge_generated.rs
+dart_format_line_length: 100
+c_output: ios/Runner/bridge_generated.h

@@ -1,0 +1,41 @@
+# cbindgen設定ファイル
+language = "C"
+include_guard = "NEXTDOWNLOADER_H"
+include_version = true
+namespace = "NextDownloader"
+tab_width = 4
+documentation = true
+style = "both"
+
+# ヘッダーに含めるコメント
+header = """
+/* NextDownloader C API
+ * このファイルは自動生成されています。手動で編集しないでください。
+ */
+"""
+
+# エクスポートするシンボルの接頭辞
+export_prefix = "nd_"
+
+# C++の場合の名前空間
+cpp_namespace = "NextDownloader"
+
+# 型のマッピング
+[defines]
+"feature = c-ffi" = "C_FFI"
+
+# 列挙型の設定
+[enum]
+rename_variants = "ScreamingSnakeCase"
+prefix_with_name = true
+
+# 構造体の設定
+[struct]
+derive_eq = true
+derive_neq = true
+derive_constructor = false
+
+# 関数の設定
+[fn]
+args = "vertical"
+rename_args = "camelCase"

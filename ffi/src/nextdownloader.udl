@@ -1,0 +1,33 @@
+// NextDownloader UniFFI インターフェース定義
+namespace nextdownloader {
+    // 初期化
+    void initialize();
+    
+    // コンテンツタイプの検出
+    [Throws=String]
+    string detect_content_type(string url);
+    
+    // ダウンロード操作
+    [Throws=String]
+    string start_download(string url, string destination, optional string? format);
+    
+    [Throws=String]
+    double get_download_progress(string download_id);
+    
+    [Throws=String]
+    void cancel_download(string download_id);
+    
+    // 依存関係のチェック
+    [Throws=String]
+    DependencyStatusWrapper check_dependencies();
+    
+    // バージョン情報
+    string get_version();
+};
+
+// 依存関係のステータス
+dictionary DependencyStatusWrapper {
+    boolean ytdlp;
+    boolean aria2c;
+    boolean ffmpeg;
+};

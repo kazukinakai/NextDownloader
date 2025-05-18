@@ -1,187 +1,179 @@
-use std::path::PathBuf;
-use tokio::fs::{self, File};
-use tokio::io::AsyncWriteExt;
-use std::time::Duration;
-use url::Url;
+//! # ユーティリティモジュール
+//! 
+//! NextDownloaderで使用する共通ユーティリティ関数を提供します。
 
-/// ユーティリティ関数を提供するモジュール
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
-/// 実行可能ファイルのパスを取得します。
-/// 
-/// 環境変数PATHからのパスの検索、または現在の実行ファイルの
-/// ディレクトリからの相対パスを試みます。
-pub async fn find_executable(name: &str) -> Option<PathBuf> {
-    // 環境変数PATHからの検索
-    if let Ok(paths) = std::env::var("PATH") {
-        let paths: Vec<_> = std::env::split_paths(&paths).collect();
-        for path in paths {
-            let full_path = path.join(name);
-            if full_path.exists() && is_executable(&full_path) {
-                return Some(full_path);
-            }
-            
-            // Windows用の.exe拡張子を追加
-            #[cfg(target_os = "windows")]
-            {
-                let exe_path = path.join(format!("{}.exe", name));
-                if exe_path.exists() && is_executable(&exe_path) {
-                    return Some(exe_path);
-                }
-            }
-        }
-    }
-    
-    // 現在の実行ファイルからの相対パスを試行
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            // binディレクトリを確認
-            let bin_path = exe_dir.join("bin").join(name);
-            if bin_path.exists() && is_executable(&bin_path) {
-                return Some(bin_path);
-            }
-            
-            // Windows用の.exe拡張子を追加
-            #[cfg(target_os = "windows")]
-            {
-                let bin_exe_path = exe_dir.join("bin").join(format!("{}.exe", name));
-                if bin_exe_path.exists() && is_executable(&bin_exe_path) {
-                    return Some(bin_exe_path);
-                }
-            }
-        }
-    }
-    
-    None
-}
+use anyhow::{Context, Result};
+use log::{debug, error, info, warn};
 
-/// 指定されたパスが実行可能ファイルかどうかを確認します。
-fn is_executable(path: &PathBuf) -> bool {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        if let Ok(metadata) = std::fs::metadata(path) {
-            let permissions = metadata.permissions();
-            // 所有者実行権限をチェック
-            return permissions.mode() & 0o100 != 0;
-        }
-    }
-    
-    #[cfg(windows)]
-    {
-        // Windowsでは拡張子で判断
-        if let Some(ext) = path.extension() {
-            return ext.to_string_lossy().to_lowercase() == "exe";
-        }
-    }
-    
-    false
-}
+use crate::error::DownloaderError;
 
-/// バイナリデータをファイルに保存します。
-pub async fn save_binary_file(path: &PathBuf, data: &[u8]) -> std::io::Result<()> {
-    // 親ディレクトリが存在しない場合は作成
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).await?;
-    }
+/// ファイルサイズを人間が読みやすい形式に変換します
+pub fn format_file_size(size: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+    const TB: u64 = GB * 1024;
     
-    let mut file = File::create(path).await?;
-    file.write_all(data).await?;
-    
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let metadata = file.metadata().await?;
-        let mut permissions = metadata.permissions();
-        // 実行権限を追加
-        permissions.set_mode(permissions.mode() | 0o100);
-        fs::set_permissions(path, permissions).await?;
-    }
-    
-    Ok(())
-}
-
-/// 指定されたURLからファイルをダウンロードして保存します。
-pub async fn download_file(url: &str, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-    // reqwestを使ってダウンロード
-    let response = reqwest::get(url).await?;
-    let bytes = response.bytes().await?;
-    
-    save_binary_file(path, &bytes).await?;
-    
-    Ok(())
-}
-
-/// 指定されたツールをダウンロードしてインストールします。
-pub async fn install_tool(
-    name: &str, 
-    url: &str,
-    install_dir: &PathBuf
-) -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let file_name = url.split('/').last().unwrap_or(name);
-    let install_path = install_dir.join(file_name);
-    
-    // ディレクトリ作成
-    if let Some(parent) = install_path.parent() {
-        fs::create_dir_all(parent).await?;
-    }
-    
-    // ダウンロードして保存
-    download_file(url, &install_path).await?;
-    
-    Ok(install_path)
-}
-
-/// ディレクトリが存在することを確認し、存在しない場合は作成します。
-pub async fn ensure_dir_exists(dir: &PathBuf) -> std::io::Result<()> {
-    if !dir.exists() {
-        fs::create_dir_all(dir).await?
-    } else if !dir.is_dir() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::AlreadyExists,
-            format!("{:?} はディレクトリではありません", dir)
-        ));
-    }
-    
-    Ok(())
-}
-
-/// リトライ可能な非同期処理を実行します。
-pub async fn with_retry<F, Fut, T, E>(
-    f: F,
-    retries: u32,
-    delay: Duration
-) -> Result<T, E>
-where
-    F: Fn() -> Fut,
-    Fut: std::future::Future<Output = Result<T, E>>,
-{
-    let mut attempts = 0;
-    loop {
-        match f().await {
-            Ok(result) => return Ok(result),
-            Err(err) => {
-                attempts += 1;
-                if attempts >= retries {
-                    return Err(err);
-                }
-                tokio::time::sleep(delay).await;
-            }
-        }
-    }
-}
-
-/// URLからベースURLを取得します。
-pub fn get_base_url(url_str: &str) -> String {
-    if let Ok(url) = Url::parse(url_str) {
-        let path = url.path();
-        let last_slash_pos = path.rfind('/').unwrap_or(0);
-        let base_path = &path[..=last_slash_pos];
-        
-        let mut base_url = url.clone();
-        base_url.set_path(base_path);
-        base_url.to_string()
+    if size < KB {
+        format!("{} B", size)
+    } else if size < MB {
+        format!("{:.2} KB", size as f64 / KB as f64)
+    } else if size < GB {
+        format!("{:.2} MB", size as f64 / MB as f64)
+    } else if size < TB {
+        format!("{:.2} GB", size as f64 / GB as f64)
     } else {
-        let last_slash_pos = url_str.rfind('/').unwrap_or(0);
-        url_str[..=last_slash_pos].to_string()
+        format!("{:.2} TB", size as f64 / TB as f64)
+    }
+}
+
+/// 時間を人間が読みやすい形式に変換します
+pub fn format_duration(seconds: u64) -> String {
+    if seconds < 60 {
+        format!("{}秒", seconds)
+    } else if seconds < 3600 {
+        let minutes = seconds / 60;
+        let secs = seconds % 60;
+        format!("{}分{}秒", minutes, secs)
+    } else {
+        let hours = seconds / 3600;
+        let minutes = (seconds % 3600) / 60;
+        let secs = seconds % 60;
+        format!("{}時間{}分{}秒", hours, minutes, secs)
+    }
+}
+
+/// コマンドが存在するかどうかを確認します
+pub fn command_exists(command: &str) -> bool {
+    #[cfg(target_os = "windows")]
+    let output = Command::new("where")
+        .arg(command)
+        .output();
+    
+    #[cfg(not(target_os = "windows"))]
+    let output = Command::new("which")
+        .arg(command)
+        .output();
+    
+    match output {
+        Ok(output) => output.status.success(),
+        Err(_) => false,
+    }
+}
+
+/// ファイルの拡張子を取得します
+pub fn get_file_extension(path: &Path) -> Option<String> {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext.to_lowercase())
+}
+
+/// ファイル名から拡張子を除いた部分を取得します
+pub fn get_file_stem(path: &Path) -> Option<String> {
+    path.file_stem()
+        .and_then(|stem| stem.to_str())
+        .map(|stem| stem.to_string())
+}
+
+/// ディレクトリが存在しない場合は作成します
+pub fn ensure_directory_exists(path: &Path) -> Result<(), DownloaderError> {
+    if !path.exists() {
+        std::fs::create_dir_all(path)
+            .map_err(|e| DownloaderError::FileSystemError(format!("ディレクトリの作成に失敗しました: {}", e)))?;
+    }
+    Ok(())
+}
+
+/// URLからファイル名を抽出します
+pub fn extract_filename_from_url(url: &str) -> Option<String> {
+    url::Url::parse(url)
+        .ok()
+        .and_then(|url| {
+            url.path_segments()
+                .and_then(|segments| segments.last())
+                .map(|last_segment| last_segment.to_string())
+        })
+}
+
+/// 一時ファイルのパスを生成します
+pub fn generate_temp_path(original_path: &Path, temp_dir: Option<&Path>) -> PathBuf {
+    let file_name = original_path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy();
+    
+    let temp_file_name = format!("{}.part", file_name);
+    
+    if let Some(dir) = temp_dir {
+        dir.join(temp_file_name)
+    } else {
+        original_path.with_file_name(temp_file_name)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+    
+    #[test]
+    fn test_format_file_size() {
+        assert_eq!(format_file_size(0), "0 B");
+        assert_eq!(format_file_size(1023), "1023 B");
+        assert_eq!(format_file_size(1024), "1.00 KB");
+        assert_eq!(format_file_size(1024 * 1024), "1.00 MB");
+        assert_eq!(format_file_size(1024 * 1024 * 1024), "1.00 GB");
+    }
+    
+    #[test]
+    fn test_format_duration() {
+        assert_eq!(format_duration(30), "30秒");
+        assert_eq!(format_duration(90), "1分30秒");
+        assert_eq!(format_duration(3600), "1時間0分0秒");
+        assert_eq!(format_duration(3661), "1時間1分1秒");
+    }
+    
+    #[test]
+    fn test_get_file_extension() {
+        assert_eq!(get_file_extension(Path::new("test.mp4")), Some("mp4".to_string()));
+        assert_eq!(get_file_extension(Path::new("test.MP4")), Some("mp4".to_string()));
+        assert_eq!(get_file_extension(Path::new("test")), None);
+    }
+    
+    #[test]
+    fn test_get_file_stem() {
+        assert_eq!(get_file_stem(Path::new("test.mp4")), Some("test".to_string()));
+        assert_eq!(get_file_stem(Path::new("path/to/test.mp4")), Some("test".to_string()));
+        assert_eq!(get_file_stem(Path::new("test")), Some("test".to_string()));
+    }
+    
+    #[test]
+    fn test_extract_filename_from_url() {
+        assert_eq!(
+            extract_filename_from_url("https://example.com/path/to/file.mp4"),
+            Some("file.mp4".to_string())
+        );
+        assert_eq!(
+            extract_filename_from_url("https://example.com/"),
+            None
+        );
+    }
+    
+    #[test]
+    fn test_generate_temp_path() {
+        let path = Path::new("/path/to/file.mp4");
+        assert_eq!(
+            generate_temp_path(path, None),
+            PathBuf::from("/path/to/file.mp4.part")
+        );
+        
+        let temp_dir = Path::new("/tmp");
+        assert_eq!(
+            generate_temp_path(path, Some(temp_dir)),
+            PathBuf::from("/tmp/file.mp4.part")
+        );
     }
 }

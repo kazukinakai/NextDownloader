@@ -1,0 +1,74 @@
+{
+  "build": {
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "bundle": {
+    "active": true,
+    "category": "Utility",
+    "copyright": "© 2025 NextDownloader Team",
+    "identifier": "com.nextdownloader.app",
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "license": "LICENSE",
+      "licenseFile": "LICENSE.txt"
+    },
+    "windows": {
+      "webviewInstallMode": "skip",
+      "allowDowngrades": false
+    },
+    "linux": {
+      "iconTheme": "hicolor"
+    }
+  },
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "NextDownloader",
+        "width": 1000,
+        "height": 700,
+        "resizable": true,
+        "fullscreen": false,
+        "transparent": false,
+        "decorations": true,
+        "visible": true,
+        "theme": "Light",
+        "fileDropEnabled": true
+      }
+    ]
+  },
+  "plugins": {
+    "fs": {
+      "scope": {
+        "allow": ["$DOWNLOAD/**", "$DOCUMENT/**"],
+        "deny": []
+      }
+    },
+    "http": {
+      "scope": ["https://**", "http://**"]
+    },
+    "shell": {
+      "scope": {
+        "allow": [
+          {
+            "name": "yt-dlp",
+            "cmd": "yt-dlp"
+          },
+          {
+            "name": "aria2c",
+            "cmd": "aria2c"
+          },
+          {
+            "name": "ffmpeg",
+            "cmd": "ffmpeg"
+          }
+        ]
+      }
+    }
+  }
+}
