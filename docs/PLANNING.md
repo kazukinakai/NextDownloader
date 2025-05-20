@@ -15,15 +15,16 @@ NextDownloaderは、以下のコンポーネントからなるモノレポ構造
 
 ```
 NextDownloader/
-├── core/                   # Rustコアライブラリ
-├── ffi/                    # FFIレイヤー（C FFI、UniFFI）
+├── crates/                 # Rustクレート群
+│   ├── core/               # コアライブラリ
+│   ├── ffi/                # FFIレイヤー（C FFI、UniFFI）
+│   ├── cli/                # CLIアプリケーション
+│   └── plugins/            # Tauriプラグイン
 ├── apps/                   # アプリケーション
 │   ├── desktop/            # デスクトップアプリ（Tauri 2.0）
-│   ├── mobile/             # モバイルアプリ（将来的に実装）
-├── cli/                    # コマンドラインインターフェース
-├── packages/               # 共通パッケージ
-├── plugins/                # Tauriプラグイン
-└── docs/                   # ドキュメント
+│   └── mobile/             # モバイルアプリ（将来的に実装）
+├── docs/                   # ドキュメント
+├── Cargo.toml              # Rustワークスペース定義
 ```
 
 ### コアライブラリ（`core/`）
@@ -83,47 +84,16 @@ NextDownloader/
 
 ```
 NextDownloader/
-├── core/                       # Rustコアライブラリ
-│   ├── src/
-│   │   ├── lib.rs              # ライブラリのエントリポイント
-│   │   ├── downloader.rs       # ダウンロードマネージャー
-│   │   ├── content_type.rs     # コンテンツタイプ検出
-│   │   ├── error.rs            # エラー処理
-│   │   ├── config.rs           # 設定管理
-│   │   └── utils.rs            # ユーティリティ関数
-│   └── Cargo.toml
-├── ffi/                        # FFIレイヤー
-│   ├── src/
-│   │   ├── lib.rs              # FFIのエントリポイント
-│   │   ├── c_ffi.rs            # C FFIバインディング
-│   │   ├── uniffi.rs           # UniFFIバインディング
-│   │   └── nextdownloader.udl  # UniFFIインターフェース定義
-│   ├── build.rs                # ビルドスクリプト
-│   └── Cargo.toml
-├── apps/
-│   ├── desktop/                # デスクトップアプリ
-│   │   ├── src/                # フロントエンド
-│   │   │   ├── main.tsx        # エントリポイント
-│   │   │   ├── App.tsx         # メインアプリコンポーネント
-│   │   │   ├── components/     # UIコンポーネント
-│   │   │   ├── pages/          # ページコンポーネント
-│   │   │   ├── api/            # APIクライアント
-│   │   │   └── types/          # 型定義
-│   │   ├── src-tauri/          # Tauriバックエンド
-│   │   │   ├── src/
-│   │   │   │   ├── main.rs     # バックエンドのエントリポイント
-│   │   │   │   ├── commands/   # Tauriコマンド
-│   │   │   │   └── state.rs    # アプリケーション状態
-│   │   │   ├── Cargo.toml
-│   │   │   └── tauri.conf.json # Tauri設定
-│   │   ├── package.json
-│   │   └── vite.config.ts
-│   └── mobile/                 # モバイルアプリ（将来的に実装）
-├── cli/                        # コマンドラインインターフェース
+├── crates/                     # Rustクレート群
+│   ├── core/                   # コアライブラリ
+│   ├── ffi/                    # FFIレイヤー
+│   ├── cli/                    # CLIアプリケーション
+│   └── plugins/                # Tauriプラグイン
+├── apps/                       # アプリケーション
+│   ├── desktop/                # デスクトップアプリ（Tauri）
+│   └── mobile/                 # モバイルアプリ（Flutter）
 ├── docs/                       # ドキュメント
-│   ├── PLANNING.md             # プロジェクト計画
-│   ├── TASK.md                 # タスク管理
-│   └── KNOWLEDGE.md            # 知識ベース
+├── Cargo.toml                  # Rustワークスペース定義
 └── README.md                   # プロジェクト概要
 ```
 
