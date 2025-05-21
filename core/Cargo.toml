@@ -43,6 +43,17 @@ uuid = { version = "1.7.0", features = ["v4", "serde"] }
 regex = "1.10.3"
 lazy_static = "1.4.0"
 
+# HLS/DASH処理
+m3u8-rs = "6.0.0"
+dash-mpd = "0.15.0"
+bytes = "1.5.0"
+async-stream = "0.3.5"
+
+# FFmpeg連携
+rust-ffmpeg = { package = "ffmpeg-next", version = "6.1.0", optional = true }
+ffmpeg-sys-next = { version = "6.1.0", optional = true }
+videolan-ffi = { version = "0.1", optional = true, default-features = false, features = ["libvlc-sys"] }
+
 [dev-dependencies]
 mockall = "0.12.1"
 rstest = "0.18.2"
@@ -51,4 +62,6 @@ tokio-test = "0.4.3"
 
 [features]
 default = []
+ffmpeg = ["rust-ffmpeg", "ffmpeg-sys-next"]
+vlc = ["videolan-ffi"]
 test-integration = []

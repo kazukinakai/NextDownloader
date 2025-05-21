@@ -1,70 +1,78 @@
 # NextDownloader
 
-NextDownloaderは、Rustの高性能なダウンロードエンジンとFlutterのクロスプラットフォームUIを組み合わせた、次世代のダウンロードマネージャーです。
+高性能なマルチメディアダウンローダーアプリケーション
 
-## 主な機能
+![NextDownloader](NextDownloader.png)
 
-- **高速ダウンロード**: Rustの並行処理能力を活用した高速なダウンロード
-- **YouTube動画のダウンロード**: 様々な品質オプションに対応
-- **ダウンロード管理**: 一時停止、再開、キャンセル機能
-- **プログレス追跡**: リアルタイムのダウンロード進捗表示
-- **カスタマイズ可能な設定**: ダウンロードパス、同時ダウンロード数などの設定
-- **クロスプラットフォーム**: macOS, Windows, Linux対応予定
+## 概要
 
-## インストール方法
+NextDownloaderは、Mac用の高性能ダウンローダーです。Rustの高速な処理能力とFlutterの美しいUIを組み合わせ、大容量ファイルやストリーミングメディアを迅速にダウンロードすることができます。
 
-### 開発環境のセットアップ
+### 主な機能
 
-1. **Rustのインストール**:
-   ```bash
+- **高速ダウンロード**: 2-5GBの高画質動画ファイルも高速にダウンロード
+- **ストリーミングサポート**: HLS/DASHストリーミングをサポート
+- **DRM認証対応**: ログイン後の動画ストリームレコーディング
+- **レジューム機能**: ダウンロードが途切れた場合に再開可能
+- **H.265変換**: オプションでH264動画をH.265に圧縮して保存
+
+## プロジェクト構造
+
+```
+nextdownloader/
+├── core/                # Rustコアライブラリ
+│   ├── src/             # Rustソースコード
+│   └── Cargo.toml       # Rust依存関係
+├── ffi/                 # Rust-Dart FFIレイヤー
+│   ├── src/             # FFIソースコード
+│   └── Cargo.toml       # FFIの依存関係
+├── flutter_app/         # Flutterアプリケーション
+│   ├── lib/             # Dartソースコード
+│   ├── macos/           # macOS固有の設定
+│   └── pubspec.yaml     # Flutter依存関係
+├── Cargo.toml           # ワークスペース設定
+└── README.md            # このファイル
+```
+
+## 開発環境の設定
+
+### 前提条件
+
+- Rust 1.70以上
+- Flutter 3.10以上
+- Xcode 14以上 (macOSの場合)
+- Visual Studio 2022 (Windowsの場合)
+
+### ビルド手順
+
+1. Rustツールチェーンのインストール:
+   ```
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    ```
 
-2. **Flutterのインストール**:
-   [Flutter公式サイト](https://flutter.dev/docs/get-started/install)の手順に従ってインストール
+2. Flutter SDKのインストール:
+   Flutter公式サイトからダウンロードしてインストール
 
-3. **依存関係のインストール**:
-   ```bash
+3. 依存関係のインストール:
+   ```
+   cargo install flutter_rust_bridge_codegen
+   ```
+
+4. プロジェクトのビルド:
+   ```
    cd flutter_app
    flutter pub get
-   ```
-
-4. **Rustライブラリのビルド**:
-   ```bash
-   cd ffi
+   cd ../
    cargo build --release
+   cd flutter_app
+   flutter run
    ```
-
-### アプリケーションの実行
-
-```bash
-cd flutter_app
-flutter run -d macos
-```
-
-## プロジェクト構成
-
-```
-NextDownloader/
-├── core/                   # Rustコアライブラリ
-├── ffi/                    # FFIレイヤー
-├── flutter_app/            # Flutterアプリケーション
-│   ├── lib/                # Dartコード
-│   │   ├── core/           # コア機能
-│   │   ├── features/       # 機能モジュール
-│   │   └── main.dart       # エントリーポイント
-│   └── macos/              # macOS固有の設定
-├── docs/                   # ドキュメント
-└── README.md               # プロジェクト概要
-```
-
-## 開発環境
-
-- **Rust**: 安定版 (1.70.0以上)
-- **Flutter**: 3.10.0以上
-- **Dart**: 3.0.0以上
-- **macOS**: 10.14以上
 
 ## ライセンス
 
-MIT License
+MIT License - 詳細はLICENSEファイルを参照してください。
+
+## 貢献
+
+バグの報告や機能のリクエストは、Issueを通じてお願いいたします。
+プルリクエストも歓迎します！

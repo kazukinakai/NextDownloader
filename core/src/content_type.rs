@@ -17,6 +17,8 @@ pub enum ContentType {
     DASH,
     /// YouTube
     YouTube,
+    /// DRM保護されたコンテンツ
+    DrmProtected,
     /// 不明なコンテンツタイプ
     Unknown,
 }
@@ -51,8 +53,24 @@ impl ContentType {
     /// コンテンツタイプが動画かどうかを判定します
     pub fn is_video(&self) -> bool {
         match self {
-            ContentType::MP4 | ContentType::HLS | ContentType::DASH | ContentType::YouTube => true,
+            ContentType::MP4 | ContentType::HLS | ContentType::DASH | ContentType::YouTube | ContentType::DrmProtected => true,
             ContentType::Unknown => false,
+        }
+    }
+    
+    /// コンテンツタイプがストリーミングかどうかを判定します
+    pub fn is_streaming(&self) -> bool {
+        match self {
+            ContentType::HLS | ContentType::DASH => true,
+            _ => false,
+        }
+    }
+    
+    /// コンテンツタイプがDRM保護されているかどうかを判定します
+    pub fn is_drm_protected(&self) -> bool {
+        match self {
+            ContentType::DrmProtected => true,
+            _ => false,
         }
     }
 }
@@ -64,6 +82,7 @@ impl fmt::Display for ContentType {
             ContentType::HLS => write!(f, "HLS"),
             ContentType::DASH => write!(f, "DASH"),
             ContentType::YouTube => write!(f, "YouTube"),
+            ContentType::DrmProtected => write!(f, "DrmProtected"),
             ContentType::Unknown => write!(f, "Unknown"),
         }
     }
@@ -78,6 +97,7 @@ impl FromStr for ContentType {
             "hls" => Ok(ContentType::HLS),
             "dash" => Ok(ContentType::DASH),
             "youtube" => Ok(ContentType::YouTube),
+            "drm" | "drmprotected" => Ok(ContentType::DrmProtected),
             "unknown" => Ok(ContentType::Unknown),
             _ => Err(format!("Invalid content type: {}", s)),
         }

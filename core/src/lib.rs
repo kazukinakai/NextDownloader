@@ -20,11 +20,15 @@ pub mod content_type;
 pub mod error;
 pub mod utils;
 pub mod config;
+pub mod streaming;
+pub mod encoding;
 
 // 再エクスポート
 pub use content_type::ContentType;
 pub use downloader::{Downloader, DownloadManager, DownloadOptions, VideoFormat};
 pub use error::ErrorCode;
+pub use streaming::{hls::HlsDownloader, dash::DashDownloader, common::StreamingOptions};
+pub use encoding::{EncodingManager, EncodingOptions, VideoInfo};
 
 /// ダウンロードの進捗状況
 #[derive(Debug, Clone, Serialize, Deserialize)]

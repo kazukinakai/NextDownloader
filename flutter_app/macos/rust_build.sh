@@ -7,8 +7,9 @@ set -e
 # プロジェクトのルートディレクトリを取得
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 FFI_DIR="$PROJECT_ROOT/ffi"
-TARGET_DIR="$FFI_DIR/target"
+TARGET_DIR="$PROJECT_ROOT/target"  # ルートのtargetディレクトリを使用
 LIBS_DIR="$PROJECT_ROOT/flutter_app/macos/Libs"
+FRAMEWORKS_DIR="$PROJECT_ROOT/flutter_app/build/macos/Build/Products/Debug/NextDownloader.app/Contents/Frameworks"
 
 # CPUアーキテクチャを検出
 ARCH="$(uname -m)"
@@ -35,15 +36,20 @@ echo "プロジェクトルート: $PROJECT_ROOT"
 echo "FFIディレクトリ: $FFI_DIR"
 echo "ターゲットディレクトリ: $TARGET_DIR"
 echo "ライブラリディレクトリ: $LIBS_DIR"
+echo "フレームワークディレクトリ: $FRAMEWORKS_DIR"
 
 # Libsディレクトリが存在しない場合は作成
 mkdir -p "$LIBS_DIR"
+mkdir -p "$FRAMEWORKS_DIR"
 
 # Homebrewでインストールされた場合のパスを追加
 export PATH="/opt/homebrew/bin:$PATH"
 
+# ワークスペースのルートディレクトリでcargoを実行
+cd "$PROJECT_ROOT"
+echo "Rustワークスペースのルートディレクトリでのビルドを実行します..."
+
 # 各ターゲット用にRustライブラリをビルド
-cd "$FFI_DIR"
 for TARGET in "${RUST_TARGETS[@]}"; do
   echo "Rustライブラリを $TARGET 用にビルドしています..."
   # ターゲットがインストールされているか確認
@@ -55,16 +61,16 @@ for TARGET in "${RUST_TARGETS[@]}"; do
       }
     fi
     # rustupが利用可能な場合はターゲットを指定してビルド
-    cargo build --release --target "$TARGET" || {
+    cargo build --release -p next_downloader_ffi --target "$TARGET" || {
       echo "警告: ターゲット指定ビルドに失敗しました。標準ターゲットでビルドを試みます..."
-      cargo build --release
+      cargo build --release -p next_downloader_ffi
       cp "$TARGET_DIR/release/$DYLIB_NAME" "$LIBS_DIR/"
       BUILD_UNIVERSAL=false
       break
     }
   else
     echo "rustupが見つかりません。標準ターゲットでビルドを試みます..."
-    cargo build --release
+    cargo build --release -p next_downloader_ffi
     cp "$TARGET_DIR/release/$DYLIB_NAME" "$LIBS_DIR/"
     BUILD_UNIVERSAL=false
     break
@@ -104,4 +110,9 @@ fi
 echo "ライブラリのインストール名を変更しています..."
 install_name_tool -id "@executable_path/../Frameworks/$DYLIB_NAME" "$LIBS_DIR/$DYLIB_NAME"
 
+# フレームワークディレクトリにライブラリをコピー
+echo "ライブラリをフレームワークディレクトリにコピーしています..."
+cp "$LIBS_DIR/$DYLIB_NAME" "$FRAMEWORKS_DIR/"
+
 echo "ビルドが完了しました: $LIBS_DIR/$DYLIB_NAME"
+echo "フレームワークにコピーしました: $FRAMEWORKS_DIR/$DYLIB_NAME"

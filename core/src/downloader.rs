@@ -18,6 +18,7 @@ use uuid::Uuid;
 use crate::content_type::ContentType;
 use crate::error::{DownloaderError, ErrorCode};
 use crate::{DownloadInfo, DownloadProgress, DownloadStatus, DownloadManagerConfig};
+use crate::encoding::{EncodingManager, EncodingOptions, VideoFormat as EncodingFormat};
 
 /// 動画フォーマット
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,6 +52,10 @@ pub struct DownloadOptions {
     pub timeout: Option<u64>,
     /// 再試行回数
     pub retry_count: Option<u32>,
+    /// H.265に変換するかどうか
+    pub convert_to_h265: bool,
+    /// 変換オプション
+    pub encoding_options: Option<EncodingOptions>,
 }
 
 impl Default for DownloadOptions {
@@ -64,6 +69,8 @@ impl Default for DownloadOptions {
             max_file_size: None,
             timeout: Some(30),
             retry_count: Some(3),
+            convert_to_h265: false,
+            encoding_options: None,
         }
     }
 }
@@ -138,6 +145,7 @@ impl DownloadManager {
         url: &str,
         destination: &Path,
         format: Option<&str>,
+        convert_to_h265: bool,
     ) -> Result<String, DownloaderError> {
         // URLの検証
         if !url.starts_with("http://") && !url.starts_with("https://") {
@@ -153,6 +161,12 @@ impl DownloadManager {
         // ダウンロードオプションの作成
         let mut options = DownloadOptions::default();
         options.destination = destination.to_path_buf();
+        options.convert_to_h265 = convert_to_h265;
+        
+        // H.265変換が指定されている場合、デフォルトのエンコードオプションを設定
+        if convert_to_h265 {
+            options.encoding_options = Some(EncodingOptions::default());
+        }
         
         // フォーマットの設定（指定されている場合）
         if let Some(fmt) = format {
