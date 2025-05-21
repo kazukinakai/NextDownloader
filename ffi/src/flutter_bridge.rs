@@ -3,7 +3,7 @@
 // flutter_rust_bridgeの形式に合わせて実装
 
 use flutter_rust_bridge::*;
-use nextdownloader_core::{DownloadManager, DownloadOptions, ContentType, DownloadStatus, ErrorCode};
+use nextdownloader_core::{DownloadManager, DownloadOptions, ContentType, DownloadStatus, ErrorCode, ExternalToolManager, ExternalTool, ExternalToolError, DependencyStatus};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock, Mutex};
 use std::path::PathBuf;
@@ -20,7 +20,16 @@ use uuid::Uuid;
 // グローバルダウンロードマネージャーのインスタンス
 lazy_static! {
     static ref DOWNLOAD_MANAGER: Arc<RwLock<DownloadManager>> = Arc::new(RwLock::new(DownloadManager::new()));
+    static ref EXTERNAL_TOOL_MANAGER: Arc<Mutex<ExternalToolManager>> = Arc::new(Mutex::new(ExternalToolManager::new()));
     static ref RUNTIME: Mutex<Runtime> = Mutex::new(Runtime::new().unwrap());
+}
+
+// 依存関係ステータスを表すデータ構造
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DependencyStatusInfo {
+    pub ytdlp_available: bool,
+    pub aria2c_available: bool,
+    pub ffmpeg_available: bool,
 }
 
 // ダウンロード進捗情報を表すデータ構造
@@ -72,6 +81,7 @@ pub struct Settings {
     pub max_concurrent_downloads: i32,
     pub use_system_notification: bool,
     pub auto_extract_archives: bool,
+    pub use_external_tools: bool,
     pub theme: String,
 }
 
@@ -90,6 +100,31 @@ pub struct YoutubeVideoFormat {
     pub quality: String,
     pub format: String,
     pub size: i32,
+}
+
+// yt-dlp動画情報を表すデータ構造（簡略化）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct YtDlpVideoInfoWrapper {
+    pub id: String,
+    pub title: String,
+    pub duration: f64,
+    pub formats: Vec<YtDlpFormatWrapper>,
+    pub webpage_url: String,
+    pub thumbnail: String,
+    pub description: String,
+}
+
+// yt-dlpフォーマット情報を表すデータ構造（簡略化）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct YtDlpFormatWrapper {
+    pub format_id: String,
+    pub format: String,
+    pub url: String,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub filesize: Option<u64>,
+    pub vcodec: String,
+    pub acodec: String,
 }
 
 // C FFI関数のエクスポート
@@ -419,6 +454,7 @@ pub extern "C" fn get_settings() -> *mut c_char {
             max_concurrent_downloads: 3,
             use_system_notification: true,
             auto_extract_archives: true,
+            use_external_tools: true,
             theme: "system".to_string(),
         };
         
@@ -463,6 +499,190 @@ pub extern "C" fn update_settings(settings_json_ptr: *const c_char) -> i8 {
         Ok(true) => 1,
         _ => 0,
     }
+}
+
+#[no_mangle]
+pub extern "C" fn check_external_tools() -> *mut c_char {
+    let result = catch_unwind_result(|| {
+        let runtime = RUNTIME.lock()
+            .map_err(|e| anyhow!("ランタイムの取得に失敗しました: {}", e))?;
+        
+        let dependencies = runtime.block_on(async {
+            let mut tool_manager = EXTERNAL_TOOL_MANAGER.lock()
+                .map_err(|e| anyhow!("外部ツールマネージャーの取得に失敗しました: {}", e))?;
+            
+            let ytdlp_available = tool_manager.check_tool_available(ExternalTool::YtDlp).await;
+            let aria2c_available = tool_manager.check_tool_available(ExternalTool::Aria2c).await;
+            let ffmpeg_available = tool_manager.check_tool_available(ExternalTool::FFmpeg).await;
+            
+            DependencyStatusInfo {
+                ytdlp_available,
+                aria2c_available,
+                ffmpeg_available,
+            }
+        });
+        
+        let json = serde_json::to_string(&dependencies)?;
+        Ok(json)
+    });
+    
+    result_to_c_string(result)
+}
+
+#[no_mangle]
+pub extern "C" fn download_with_ytdlp(
+    url_ptr: *const c_char,
+    output_dir_ptr: *const c_char,
+) -> *mut c_char {
+    let result = catch_unwind_result(|| {
+        let url = unsafe { CStr::from_ptr(url_ptr).to_str()? };
+        let output_dir = unsafe { CStr::from_ptr(output_dir_ptr).to_str()? };
+        
+        info!("yt-dlpでダウンロード開始: {} -> {}", url, output_dir);
+        
+        let runtime = RUNTIME.lock()
+            .map_err(|e| anyhow!("ランタイムの取得に失敗しました: {}", e))?;
+        
+        let download_id = Uuid::new_v4().to_string();
+        
+        // コールバック関数は実装されていないため、空で渡す
+        let result = runtime.block_on(async {
+            let mut tool_manager = EXTERNAL_TOOL_MANAGER.lock()
+                .map_err(|e| anyhow!("外部ツールマネージャーの取得に失敗しました: {}", e))?;
+            
+            let output_path = PathBuf::from(output_dir);
+            tool_manager.download_best_quality(url, &output_path, None).await
+        });
+        
+        match result {
+            Ok(file_path) => {
+                let now = Utc::now();
+                let now_str = now.to_rfc3339();
+                
+                let download_info = DownloadInfo {
+                    download_id,
+                    url: url.to_string(),
+                    destination: file_path.to_string_lossy().to_string(),
+                    status: status_to_string(DownloadStatus::Completed),
+                    progress: 1.0,
+                    downloaded_size: 0, // 本来はファイルサイズを取得するべき
+                    total_size: None,
+                    created_at: now_str.clone(),
+                    updated_at: now_str,
+                    error_message: None,
+                };
+                
+                let json = serde_json::to_string(&download_info)?;
+                Ok(json)
+            },
+            Err(e) => Err(anyhow!("yt-dlpでのダウンロードに失敗しました: {}", e)),
+        }
+    });
+    
+    result_to_c_string(result)
+}
+
+#[no_mangle]
+pub extern "C" fn get_video_info_ytdlp(url_ptr: *const c_char) -> *mut c_char {
+    let result = catch_unwind_result(|| {
+        let url = unsafe { CStr::from_ptr(url_ptr).to_str()? };
+        
+        info!("yt-dlpで動画情報を取得中: {}", url);
+        
+        let runtime = RUNTIME.lock()
+            .map_err(|e| anyhow!("ランタイムの取得に失敗しました: {}", e))?;
+        
+        let result = runtime.block_on(async {
+            let mut tool_manager = EXTERNAL_TOOL_MANAGER.lock()
+                .map_err(|e| anyhow!("外部ツールマネージャーの取得に失敗しました: {}", e))?;
+            
+            tool_manager.get_video_info(url).await
+        });
+        
+        match result {
+            Ok(video_info) => {
+                let formats = video_info.formats.iter().map(|format| YtDlpFormatWrapper {
+                    format_id: format.format_id.clone(),
+                    format: format.format.clone(),
+                    url: format.url.clone(),
+                    width: format.width,
+                    height: format.height,
+                    filesize: format.filesize,
+                    vcodec: format.vcodec.clone(),
+                    acodec: format.acodec.clone(),
+                }).collect();
+                
+                let info_wrapper = YtDlpVideoInfoWrapper {
+                    id: video_info.id,
+                    title: video_info.title,
+                    duration: video_info.duration,
+                    formats,
+                    webpage_url: video_info.webpage_url,
+                    thumbnail: video_info.thumbnail,
+                    description: video_info.description,
+                };
+                
+                let json = serde_json::to_string(&info_wrapper)?;
+                Ok(json)
+            },
+            Err(e) => Err(anyhow!("yt-dlpでの動画情報取得に失敗しました: {}", e)),
+        }
+    });
+    
+    result_to_c_string(result)
+}
+
+#[no_mangle]
+pub extern "C" fn download_with_aria2c(
+    url_ptr: *const c_char,
+    output_path_ptr: *const c_char,
+) -> *mut c_char {
+    let result = catch_unwind_result(|| {
+        let url = unsafe { CStr::from_ptr(url_ptr).to_str()? };
+        let output_path = unsafe { CStr::from_ptr(output_path_ptr).to_str()? };
+        
+        info!("aria2cでダウンロード開始: {} -> {}", url, output_path);
+        
+        let runtime = RUNTIME.lock()
+            .map_err(|e| anyhow!("ランタイムの取得に失敗しました: {}", e))?;
+        
+        let download_id = Uuid::new_v4().to_string();
+        
+        // コールバック関数は実装されていないため、空で渡す
+        let result = runtime.block_on(async {
+            let mut tool_manager = EXTERNAL_TOOL_MANAGER.lock()
+                .map_err(|e| anyhow!("外部ツールマネージャーの取得に失敗しました: {}", e))?;
+            
+            let output_path = PathBuf::from(output_path);
+            tool_manager.download_with_aria2(url, &output_path, None).await
+        });
+        
+        match result {
+            Ok(file_path) => {
+                let now = Utc::now();
+                let now_str = now.to_rfc3339();
+                
+                let download_info = DownloadInfo {
+                    download_id,
+                    url: url.to_string(),
+                    destination: file_path.to_string_lossy().to_string(),
+                    status: status_to_string(DownloadStatus::Completed),
+                    progress: 1.0,
+                    downloaded_size: 0, // 本来はファイルサイズを取得するべき
+                    total_size: None,
+                    created_at: now_str.clone(),
+                    updated_at: now_str,
+                    error_message: None,
+                };
+                
+                let json = serde_json::to_string(&download_info)?;
+                Ok(json)
+            },
+            Err(e) => Err(anyhow!("aria2cでのダウンロードに失敗しました: {}", e)),
+        }
+    });
+    
+    result_to_c_string(result)
 }
 
 // ユーティリティ関数

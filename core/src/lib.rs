@@ -22,6 +22,7 @@ pub mod utils;
 pub mod config;
 pub mod streaming;
 pub mod encoding;
+pub mod external;
 
 // 再エクスポート
 pub use content_type::ContentType;
@@ -29,6 +30,7 @@ pub use downloader::{Downloader, DownloadManager, DownloadOptions, VideoFormat};
 pub use error::ErrorCode;
 pub use streaming::{hls::HlsDownloader, dash::DashDownloader, common::StreamingOptions};
 pub use encoding::{EncodingManager, EncodingOptions, VideoInfo};
+pub use external::{ExternalToolManager, ExternalTool, ExternalToolError, YtDlpVideoInfo};
 
 /// ダウンロードの進捗状況
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -102,6 +104,8 @@ pub struct DownloadManagerConfig {
     pub notify_on_completion: bool,
     /// アーカイブを自動的に解凍する
     pub auto_extract_archives: bool,
+    /// 外部ツール（yt-dlp/aria2c）を使用する
+    pub use_external_tools: bool,
 }
 
 impl Default for DownloadManagerConfig {
@@ -112,6 +116,7 @@ impl Default for DownloadManagerConfig {
             auto_resume: true,
             notify_on_completion: true,
             auto_extract_archives: false,
+            use_external_tools: true,
         }
     }
 }
@@ -130,6 +135,21 @@ pub struct DependencyStatus {
 /// NextDownloaderのバージョン情報を返します
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
+}
+
+/// 外部ツールの依存関係ステータスを確認します
+pub async fn check_dependencies() -> DependencyStatus {
+    let mut tool_manager = external::ExternalToolManager::new();
+    
+    let ytdlp = tool_manager.check_tool_available(external::ExternalTool::YtDlp).await;
+    let aria2c = tool_manager.check_tool_available(external::ExternalTool::Aria2c).await;
+    let ffmpeg = tool_manager.check_tool_available(external::ExternalTool::FFmpeg).await;
+    
+    DependencyStatus {
+        ytdlp,
+        aria2c,
+        ffmpeg,
+    }
 }
 
 #[cfg(test)]
