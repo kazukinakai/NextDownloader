@@ -29,6 +29,7 @@ log = "0.4.21"
 env_logger = "0.11.3"
 
 # ファイルシステム
+dirs = "5.0.1"
 tempfile = "3.10.1"
 walkdir = "2.4.0"
 

@@ -17,8 +17,11 @@ use nextdownloader_core::{
 };
 
 // モジュールのエクスポート
+#[cfg(feature = "c-ffi")]
 pub mod c_ffi;
+#[cfg(feature = "uniffi")]
 pub mod uniffi;
+pub mod flutter_bridge;
 
 // グローバルダウンロードマネージャーのインスタンス
 lazy_static! {

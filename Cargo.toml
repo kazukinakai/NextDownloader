@@ -2,8 +2,7 @@
 members = [
     "core",
     "cli",
-    "ffi",
-    "tauri-app/src-tauri"
+    "ffi"
 ]
 resolver = "2"
 

@@ -1,24 +1,36 @@
 // NextDownloader UniFFI インターフェース定義
+
+// エラー型の定義
+[Error]
+enum DownloaderError {
+    "InvalidURL",
+    "NetworkError",
+    "FileSystemError",
+    "UnsupportedFormat",
+    "DependencyError",
+    "UnknownError"
+};
+
 namespace nextdownloader {
     // 初期化
     void initialize();
     
     // コンテンツタイプの検出
-    [Throws=String]
+    [Throws=DownloaderError]
     string detect_content_type(string url);
     
     // ダウンロード操作
-    [Throws=String]
+    [Throws=DownloaderError]
     string start_download(string url, string destination, optional string? format);
     
-    [Throws=String]
+    [Throws=DownloaderError]
     double get_download_progress(string download_id);
     
-    [Throws=String]
+    [Throws=DownloaderError]
     void cancel_download(string download_id);
     
     // 依存関係のチェック
-    [Throws=String]
+    [Throws=DownloaderError]
     DependencyStatusWrapper check_dependencies();
     
     // バージョン情報

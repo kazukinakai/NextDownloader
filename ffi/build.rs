@@ -23,11 +23,15 @@ fn main() {
     }
 
     // UniFFIのバインディング生成
-    if cfg!(feature = "uniffi") {
-        uniffi::generate_scaffolding("src/nextdownloader.udl")
-            .expect("UniFFIスカフォールディングの生成に失敗しました");
-
+    #[cfg(feature = "uniffi")]
+    {
         println!("cargo:rerun-if-changed=src/uniffi.rs");
         println!("cargo:rerun-if-changed=src/nextdownloader.udl");
+        
+        #[cfg(feature = "uniffi")]
+        {
+            uniffi::generate_scaffolding("src/nextdownloader.udl")
+                .expect("UniFFIスカフォールディングの生成に失敗しました");
+        }
     }
 }

@@ -14,11 +14,12 @@ header = """
  */
 """
 
-# エクスポートするシンボルの接頭辞
-export_prefix = "nd_"
+# 名前空間の設定
+# namespaceはすでに上部で定義されています
 
-# C++の場合の名前空間
-cpp_namespace = "NextDownloader"
+# エクスポートの設定
+[export]
+prefix = "nd_"
 
 # 型のマッピング
 [defines]

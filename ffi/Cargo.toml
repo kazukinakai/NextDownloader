@@ -18,7 +18,8 @@ nextdownloader-core = { path = "../core" }
 # FFI関連
 libc = "0.2.153"
 cbindgen = "0.26.0"
-uniffi = { version = "0.25.3", features = ["cli"] }
+uniffi = { version = "0.25.3", features = ["cli"], optional = true }
+flutter_rust_bridge = "2.10.0"
 
 # シリアライズ/デシリアライズ
 serde = { version = "1.0.197", features = ["derive"] }
@@ -32,18 +33,25 @@ anyhow = "1.0.79"
 log = "0.4.21"
 env_logger = "0.11.3"
 
+# 非同期処理
+tokio = { version = "1.32", features = ["full"] }
+futures = "0.3"
+futures-util = "0.3"
+
 # ユーティリティ
 lazy_static = "1.4.0"
+chrono = "0.4"
+uuid = { version = "1.6", features = ["v4"] }
 
 [build-dependencies]
 cbindgen = "0.26.0"
-uniffi = { version = "0.25.3", features = ["build"] }
+uniffi = { version = "0.25.3", features = ["build"], optional = true }
 
 [dev-dependencies]
 tempfile = "3.10.1"
 rstest = "0.18.2"
 
 [features]
-default = ["c-ffi", "uniffi"]
+default = []
 c-ffi = []
-uniffi = []
+uniffi = ["dep:uniffi"]

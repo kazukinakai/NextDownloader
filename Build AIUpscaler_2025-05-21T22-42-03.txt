@@ -1,0 +1,47 @@
+
+Showing Recent Issues
+
+Build target AIUpscaler of project AIUpscaler with configuration Debug
+
+CompileStoryboard /Users/kazuki/github/AIUpscaler/iOS/Sources/Main.storyboard (in target 'AIUpscaler' from project 'AIUpscaler')
+    cd /Users/kazuki/github/AIUpscaler/iOS
+    /Applications/Xcode.app/Contents/Developer/usr/bin/ibtool --errors --warnings --notices --module AIUpscaler --output-partial-info-plist /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/Main-SBPartialInfo.plist --auto-activate-custom-fonts --target-device mac --minimum-deployment-target 13.0 --output-format human-readable-text /Users/kazuki/github/AIUpscaler/iOS/Sources/Main.storyboard --compilation-directory /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build
+
+/* com.apple.ibtool.document.warnings */
+/Users/kazuki/github/AIUpscaler/iOS/Sources/Main.storyboard:B8D-0N-5wS: warning: “Window Controller“ is unreachable because it has no entry points, and no identifier for runtime access via -[NSStoryboard instantiateControllerWithIdentifier:] [9]
+
+/Users/kazuki/github/AIUpscaler/iOS/Sources/Main.storyboard:B8D-0N-5wS: “Window Controller“ is unreachable because it has no entry points, and no identifier for runtime access via -[NSStoryboard instantiateControllerWithIdentifier:]
+
+SwiftCompile normal arm64 Compiling\ CoreMLManager.swift /Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift (in target 'AIUpscaler' from project 'AIUpscaler')
+
+Failed frontend command:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c /Users/kazuki/github/AIUpscaler/iOS/Sources/AppDelegate.swift -primary-file /Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift /Users/kazuki/github/AIUpscaler/iOS/Sources/ViewController.swift -emit-dependencies-path /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/Objects-normal/arm64/CoreMLManager.d -emit-const-values-path /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/Objects-normal/arm64/CoreMLManager.swiftconstvalues -emit-reference-dependencies-path /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/Objects-normal/arm64/CoreMLManager.swiftdeps -serialize-diagnostics-path /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/Objects-normal/arm64/CoreMLManager.dia -target arm64-apple-macos13.0 -Xllvm -aarch64-use-tbi -enable-objc-interop -stack-check -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk -I /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Products/Debug -F /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Products/Debug -no-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=4 -module-cache-path /Users/kazuki/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -swift-version 5 -enforce-exclusivity\=checked -Onone -D DEBUG -serialize-debugging-options -const-gather-protocols-file /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/Objects-normal/arm64/AIUpscaler_const_extract_protocols.json -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/kazuki/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/kazuki/github/AIUpscaler/iOS -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift -enable-anonymous-context-mangled-names -file-compilation-dir /Users/kazuki/github/AIUpscaler/iOS -Xcc -ivfsstatcache -Xcc /Users/kazuki/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/macosx15.4-24E241-88b860576fb364319593bd8fb30666b0.sdkstatcache -Xcc -I/Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/AIUpscaler-generated-files.hmap -Xcc -I/Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/AIUpscaler-own-target-headers.hmap -Xcc -I/Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/AIUpscaler-all-target-headers.hmap -Xcc -iquote -Xcc /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/AIUpscaler-project-headers.hmap -Xcc -I/Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Products/Debug/include -Xcc -I/Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/DerivedSources-normal/arm64 -Xcc -I/Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/DerivedSources/arm64 -Xcc -I/Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/DerivedSources -Xcc -DDEBUG\=1 -module-name AIUpscaler -frontend-parseable-output -disable-clang-spi -target-sdk-version 15.4 -target-sdk-name macosx15.4 -external-plugin-path /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/swift/host/plugins\#/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/bin/swift-plugin-server -external-plugin-path /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/local/lib/swift/host/plugins\#/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/bin/swift-plugin-server -in-process-plugin-server-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/lib/swift/host/plugins -o /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Build/Intermediates.noindex/AIUpscaler.build/Debug/AIUpscaler.build/Objects-normal/arm64/CoreMLManager.o -index-unit-output-path /AIUpscaler.build/Debug/AIUpscaler.build/Objects-normal/arm64/CoreMLManager.o -index-store-path /Users/kazuki/Library/Developer/Xcode/DerivedData/AIUpscaler-gfgerhuaaznvwkeyphayuagquzgk/Index.noindex/DataStore -index-system-modules
+
+SwiftCompile normal arm64 /Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift (in target 'AIUpscaler' from project 'AIUpscaler')
+    cd /Users/kazuki/github/AIUpscaler/iOS
+    
+
+/Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift:36:52: error: value of type 'MLModel' has no member 'modelURL'
+        if let model = model, let modelURL = model.modelURL {
+                                             ~~~~~ ^~~~~~~~
+/Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift:50:52: error: value of type 'MLModel' has no member 'modelURL'
+        if let model = model, let modelURL = model.modelURL {
+                                             ~~~~~ ^~~~~~~~
+/Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift:84:31: error: cannot find 'CIImage' in scope
+                let ciImage = CIImage(cvPixelBuffer: outputImage)
+                              ^~~~~~~
+/Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift:85:31: error: cannot find 'CIContext' in scope
+                let context = CIContext()
+                              ^~~~~~~~~
+
+/Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift:36:52: Value of type 'MLModel' has no member 'modelURL'
+
+/Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift:50:52: Value of type 'MLModel' has no member 'modelURL'
+
+/Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift:84:31: Cannot find 'CIImage' in scope
+
+/Users/kazuki/github/AIUpscaler/iOS/Sources/CoreMLManager.swift:85:31: Cannot find 'CIContext' in scope
+
+
+
+Build failed    2025/05/21, 22:42    20.9 seconds
