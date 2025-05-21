@@ -222,4 +222,7 @@ temp/
 # 特定のプロジェクトファイル
 # プロジェクト固有の無視パターンをここに追加
 # SpecStory explanation file
+*.specstory/
+
+# SpecStory explanation file
 .specstory/.what-is-this.md
